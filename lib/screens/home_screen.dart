@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
-import 'package:marquee/marquee.dart';
 
 import '../services/api_service.dart';
 import 'members_screen.dart';
@@ -183,11 +181,6 @@ class HomeContent extends StatefulWidget {
 }
 
 class HomeContentState extends State<HomeContent> {
-  final CarouselSliderController _carouselController =
-      CarouselSliderController();
-
-  int _currentBanner = 0;
-
   String userName = "Admin";
   String userRole = "Member";
 
@@ -210,14 +203,7 @@ class HomeContentState extends State<HomeContent> {
 
   List<dynamic> recentTransactions = [];
 
-  String latestNotice =
-      "বিনিয়োগ উদ্যোক্তা অ্যাপে স্বাগতম! নতুন আপডেট পেতে চোখ রাখুন।";
-
-  final List<String> banners = [
-    'assets/banner1.png',
-    'assets/banner2.png',
-    'assets/banner3.png',
-  ];
+  List<dynamic> recentInvestments = [];
 
   // Admin Permission Check
   bool get isAdmin =>
@@ -282,10 +268,30 @@ class HomeContentState extends State<HomeContent> {
     setState(() => _isLoadingStats = true);
 
     try {
-      var response = await ApiService.getTransactions();
-      var membersRes = await ApiService.getAllMembers();
+      final results = await Future.wait<dynamic>([
+        ApiService.getTransactions(),
+        ApiService.getAllMembers(),
+        ApiService.getInvestments().catchError((_) => null),
+      ]);
+      final response = results[0];
+      final membersRes = results[1];
+      final investmentsRes = results[2];
 
       if (!mounted) return;
+
+      if (investmentsRes is List) {
+        final sortedInvestments = List<dynamic>.from(investmentsRes);
+        sortedInvestments.sort((a, b) {
+          final da = DateTime.tryParse(a['StartDate']?.toString() ?? '') ??
+              DateTime.fromMillisecondsSinceEpoch(0);
+          final db = DateTime.tryParse(b['StartDate']?.toString() ?? '') ??
+              DateTime.fromMillisecondsSinceEpoch(0);
+          return db.compareTo(da);
+        });
+        recentInvestments = sortedInvestments.take(3).toList();
+      } else {
+        recentInvestments = [];
+      }
 
       if (response is List) {
         double tempCash = 0.0;
@@ -430,6 +436,156 @@ class HomeContentState extends State<HomeContent> {
     }
   }
 
+  Widget _buildRecentInvestments(bool isDark) {
+    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final titleColor = isDark ? Colors.white : const Color(0xFF183153);
+    final mutedColor = isDark ? Colors.white60 : Colors.black54;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 15),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.white12 : const Color(0xFFE2EAF1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.08 : 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.trending_up, color: Color(0xFF00796B), size: 21),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  "সাম্প্রতিক বিনিয়োগ",
+                  style: TextStyle(
+                    color: titleColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => InvestmentScreen(userRole: userRole),
+                    ),
+                  );
+                },
+                child: const Text("সব দেখুন"),
+              ),
+            ],
+          ),
+          if (_isLoadingStats && recentInvestments.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: SizedBox(
+                  height: 22,
+                  width: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            )
+          else if (recentInvestments.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                "এখনো কোনো বিনিয়োগের তথ্য পাওয়া যায়নি",
+                style: TextStyle(color: mutedColor, fontSize: 13),
+              ),
+            )
+          else
+            ...recentInvestments.map((investment) {
+              final project = investment['ProjectName']?.toString() ?? 'নাম উল্লেখ নেই';
+              final sector = investment['Sector']?.toString() ?? '';
+              final amount = investment['InvestAmount']?.toString() ?? '0';
+              final status = investment['Status']?.toString() ?? 'অজানা';
+              final isActive = status == 'সক্রিয়';
+              return Padding(
+                padding: const EdgeInsets.only(top: 9),
+                child: Row(
+                  children: [
+                    Container(
+                      height: 38,
+                      width: 38,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF00796B).withOpacity(0.10),
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: const Icon(
+                        Icons.account_balance_wallet_outlined,
+                        color: Color(0xFF00796B),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            project,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: titleColor,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
+                          ),
+                          if (sector.isNotEmpty)
+                            Text(
+                              sector,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(color: mutedColor, fontSize: 11),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          "৳ $amount",
+                          style: TextStyle(
+                            color: titleColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                        Text(
+                          status,
+                          style: TextStyle(
+                            color: isActive ? Colors.green : mutedColor,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }),
+        ],
+      ),
+    );
+  }
+
   // ================= BUILD =================
 
   @override
@@ -540,105 +696,10 @@ class HomeContentState extends State<HomeContent> {
               ),
             ),
 
-            // ২. ব্যানার
+            // সাম্প্রতিক বিনিয়োগ
+            _buildRecentInvestments(isDark),
 
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 15),
-              child: SizedBox(
-                height: 180,
-                width: double.infinity,
-                child: CarouselSlider(
-                  carouselController: _carouselController,
-                  options: CarouselOptions(
-                    autoPlay: true,
-                    autoPlayInterval:
-                        const Duration(seconds: 3),
-                    enlargeCenterPage: false,
-                    viewportFraction: 1.0,
-                    padEnds: false,
-                    onPageChanged: (index, reason) {
-                      setState(() => _currentBanner = index);
-                    },
-                  ),
-                  items: banners.map((bannerUrl) {
-                    return Builder(
-                      builder: (context) => Container(
-                        width: MediaQuery.of(context).size.width,
-                        margin: const EdgeInsets.symmetric(
-                          horizontal: 2.0,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius:
-                              BorderRadius.circular(15),
-                        ),
-                        child: ClipRRect(
-                          borderRadius:
-                              BorderRadius.circular(15),
-                          child: Image.asset(
-                            bannerUrl,
-                            fit: BoxFit.fill,
-                            errorBuilder: (c, e, s) =>
-                                Container(
-                              color: Colors.grey.shade300,
-                              child: const Center(
-                                child: Icon(Icons.image),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            // ৩. নোটিশ
-
-            Container(
-              margin: const EdgeInsets.symmetric(
-                horizontal: 15,
-                vertical: 5,
-              ),
-              padding:
-                  const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFE0B2),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: Colors.orange.shade300,
-                ),
-              ),
-              child: Row(
-                children: [
-                  const SizedBox(width: 10),
-                  const Icon(
-                    Icons.campaign,
-                    color: Colors.deepOrange,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: SizedBox(
-                      height: 20,
-                      child: Marquee(
-                        text: latestNotice,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.deepOrange,
-                        ),
-                        scrollAxis: Axis.horizontal,
-                        blankSpace: 50.0,
-                        velocity: 50.0,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            const SizedBox(height: 12),
 
             // ৪. বকেয়া বক্স
 
@@ -964,11 +1025,19 @@ class HomeContentState extends State<HomeContent> {
                     ),
                   ),
 
-                  _buildModuleIcon(
-                    Icons.fastfood,
-                    "ফান্ড",
-                    Colors.blueAccent,
-                    isDark,
+                  InkWell(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (c) => InvestmentScreen(userRole: userRole),
+                      ),
+                    ),
+                    child: _buildModuleIcon(
+                      Icons.account_balance_wallet,
+                      "ফান্ড",
+                      Colors.blueAccent,
+                      isDark,
+                    ),
                   ),
 
                   _buildModuleIcon(
