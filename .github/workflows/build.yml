@@ -1,3 +1,4 @@
+
 name: Build APK
 
 on: [push]
@@ -14,7 +15,10 @@ jobs:
       uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
-        java-version: '17'
+        java-version: '21'
+
+    - name: Verify Java Version
+      run: java -version
 
     - name: Set up Flutter
       uses: subosito/flutter-action@v2
@@ -30,7 +34,7 @@ jobs:
     - name: Generate App Icons
       run: dart run flutter_launcher_icons
 
-    # 🔥 অ্যাপের নাম 'বিনিয়োগ উদ্যোক্তা' করে দেওয়ার স্টেপ
+    # অ্যাপের নাম পরিবর্তন
     - name: Change App Name
       run: sed -i 's/android:label="somiti_app"/android:label="বিনিয়োগ উদ্যোক্তা"/g' android/app/src/main/AndroidManifest.xml
 
