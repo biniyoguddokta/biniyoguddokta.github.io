@@ -16,6 +16,7 @@ import 'due_list_screen.dart';
 import 'report_screen.dart';
 import 'transaction_list_screen.dart';
 import 'investment_screen.dart';
+import 'installment_product_screen.dart';
 import 'committee_screen.dart';
 import 'notice_screen.dart';
 import 'bank_screen.dart';
@@ -132,7 +133,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       body: SafeArea(
-        child: pages[_selectedIndex],
+        // IndexedStack keeps each tab alive; switching tabs no longer
+        // destroys its State or triggers initState/API reloads.
+        child: IndexedStack(
+          index: _selectedIndex,
+          children: pages,
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
@@ -140,11 +146,8 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedItemColor: const Color(0xFF00796B),
         unselectedItemColor: Colors.grey,
         onTap: (index) {
+          if (index == _selectedIndex) return;
           setState(() => _selectedIndex = index);
-
-          if (index == 0) {
-            _homeKey.currentState?.fetchDashboardData();
-          }
         },
         items: const [
           BottomNavigationBarItem(
@@ -262,10 +265,15 @@ class HomeContentState extends State<HomeContent> {
 
   // ================= DASHBOARD DATA =================
 
-  Future<void> fetchDashboardData() async {
+  Future<void> fetchDashboardData({bool forceRefresh = false}) async {
     if (!mounted) return;
 
-    setState(() => _isLoadingStats = true);
+    if (forceRefresh) {
+      ApiService.clearCache();
+      setState(() => _isLoadingStats = true);
+    } else if (recentTransactions.isEmpty && recentInvestments.isEmpty) {
+      setState(() => _isLoadingStats = true);
+    }
 
     try {
       final results = await Future.wait<dynamic>([
@@ -594,7 +602,7 @@ class HomeContentState extends State<HomeContent> {
         Theme.of(context).brightness == Brightness.dark;
 
     return RefreshIndicator(
-      onRefresh: fetchDashboardData,
+      onRefresh: () => fetchDashboardData(forceRefresh: true),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
@@ -1029,12 +1037,12 @@ class HomeContentState extends State<HomeContent> {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (c) => InvestmentScreen(userRole: userRole),
+                        builder: (c) => InstallmentProductScreen(userRole: userRole),
                       ),
                     ),
                     child: _buildModuleIcon(
                       Icons.account_balance_wallet,
-                      "ফান্ড",
+                      "কিস্তিতে পণ্য",
                       Colors.blueAccent,
                       isDark,
                     ),
@@ -1685,9 +1693,8 @@ class HomeContentState extends State<HomeContent> {
             );
           }
 
-          if (mounted) {
-            fetchDashboardData();
-          }
+          // Successful POST operations invalidate the shared API cache.
+          // Re-entering the dashboard can reuse cached data without a spinner.
         },
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 5),
