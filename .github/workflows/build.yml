@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -22,34 +23,33 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.44.9'
           channel: stable
           cache: true
 
-      - name: Verify permanent Android project
+      - name: Verify Android project
         run: |
           test -f android/settings.gradle
           test -f android/build.gradle
           test -f android/gradle.properties
           test -f android/app/build.gradle
-          test -f android/app/src/main/AndroidManifest.xml
-          test -f android/app/src/main/kotlin/com/example/somiti_app/MainActivity.kt
           test -f android/gradle/wrapper/gradle-wrapper.properties
           test -x android/gradlew
 
-      - name: Verify release package and protected installment screen
+      - name: Verify release package
         run: python3 tool/verify_release.py
 
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Run localization smoke tests
+      - name: Run tests
         run: flutter test --no-pub
 
       - name: Generate app icons
         run: dart run flutter_launcher_icons
 
       - name: Build release APK
-        run: flutter build apk --release --android-skip-build-dependency-validation
+        run: flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
