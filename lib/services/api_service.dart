@@ -1,3 +1,4 @@
+import 'audit_log_service.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -59,24 +60,36 @@ class ApiService {
       
       if (res.statusCode == 302) {
         clearCache();
+        await AuditLogService.record(action: action, details: 'Google Sheets API operation completed');
         return {"status": "success", "message": "Success (302)"};
       }
-      if (res.body.contains("<!DOCTYPE html>") || res.body.contains("<html>")) return {"status": "error", "message": "Permission Issue"};
+      if (res.body.contains("<!DOCTYPE html>") || res.body.contains("<html>")) {
+        await AuditLogService.record(action: action, details: 'Google Sheets API permission/server response', status: 'error');
+        return {"status": "error", "message": "Permission Issue"};
+      }
       
       if (res.statusCode == 200) {
         try {
           var decoded = jsonDecode(res.body);
           if (decoded is! Map || decoded['status'] != 'error') {
             clearCache();
+            await AuditLogService.record(action: action, details: 'Google Sheets API operation completed');
+          } else {
+            await AuditLogService.record(action: action, details: 'Google Sheets API operation rejected', status: 'error');
           }
           return decoded;
         } catch (e) {
            clearCache();
+           await AuditLogService.record(action: action, details: 'Google Sheets API operation completed');
            return {"status": "success", "message": "Success"};
         }
       }
+      await AuditLogService.record(action: action, details: 'HTTP ${res.statusCode}', status: 'error');
       return {"status": "error", "message": "Server Error: ${res.statusCode}"};
-    } catch (e) { return {"status": "error", "message": "Internet Issue: $e"}; }
+    } catch (e) {
+      await AuditLogService.record(action: action, details: 'Network/API exception: $e', status: 'error');
+      return {"status": "error", "message": "Internet Issue: $e"};
+    }
   }
 
   static Future<dynamic> getAllMembers() => _getData("getAllMembers");

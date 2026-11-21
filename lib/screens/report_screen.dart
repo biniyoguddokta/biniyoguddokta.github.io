@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'advanced_features_screen.dart';
 
 class ReportScreen extends StatelessWidget {
   const ReportScreen({super.key});
@@ -89,7 +90,7 @@ class ReportScreen extends StatelessWidget {
               height: 50,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00796B)),
-                onPressed: () {},
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdvancedReportsScreen())),
                 child: const Text("বিস্তারিত রিপোর্ট দেখুন", style: TextStyle(color: Colors.white, fontSize: 16)),
               ),
             )

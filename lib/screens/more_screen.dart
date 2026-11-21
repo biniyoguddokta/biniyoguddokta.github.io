@@ -4,9 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
-import '../main.dart'; 
+import '../app_state.dart'; 
 import 'login_screen.dart';
 import 'app_settings_screen.dart';
+import 'advanced_features_screen.dart';
 
 class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
@@ -471,6 +472,7 @@ class _MoreScreenState extends State<MoreScreen> {
               ),
             ),
             _buildMenuTile(Icons.notifications_none, "নোটিফিকেশন সেটিংস", () { Navigator.push(context, MaterialPageRoute(builder: (c) => const AppSettingsScreen())); }),
+            _buildMenuTile(Icons.dashboard_customize, "উন্নত ফিচারসমূহ", () { Navigator.push(context, MaterialPageRoute(builder: (c) => const AdvancedFeaturesScreen())); }),
             _buildMenuTile(Icons.security, "সুরক্ষা ও গোপনীয়তা (পিন)", _showPinChangeDialog),
             SwitchListTile(
               secondary: const Icon(Icons.dark_mode, color: Colors.blueGrey),

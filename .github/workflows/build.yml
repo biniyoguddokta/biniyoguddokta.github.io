@@ -1,62 +1,58 @@
 name: Build APK
 
-on: [push]
+on:
+  push:
+    branches: ['**']
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'zulu'
-        java-version: '21'
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '21'
 
-    - name: Set up Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        channel: 'stable'
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
 
-    - name: Recreate Flutter Platform Folders
-      run: flutter create .
+      - name: Verify permanent Android project
+        run: |
+          test -f android/settings.gradle
+          test -f android/build.gradle
+          test -f android/gradle.properties
+          test -f android/app/build.gradle
+          test -f android/app/src/main/AndroidManifest.xml
+          test -f android/app/src/main/kotlin/com/example/somiti_app/MainActivity.kt
+          test -f android/gradle/wrapper/gradle-wrapper.properties
+          test -x android/gradlew
 
-    - name: Install dependencies
-      run: flutter pub get
+      - name: Verify release package and protected installment screen
+        run: python3 tool/verify_release.py
 
-    - name: Generate App Icons
-      run: dart run flutter_launcher_icons
+      - name: Install dependencies
+        run: flutter pub get
 
-    # 🔥 অ্যাপের নাম 'বিনিয়োগ উদ্যোক্তা' করে দেওয়ার স্টেপ
-    - name: Change App Name
-      run: sed -i 's/android:label="somiti_app"/android:label="বিনিয়োগ উদ্যোক্তা"/g' android/app/src/main/AndroidManifest.xml
+      - name: Run localization smoke tests
+        run: flutter test --no-pub
 
-    - name: Add Internet Permission
-      run: sed -i 's/<application/<uses-permission android:name="android.permission.INTERNET"\/>\n    <application/' android/app/src/main/AndroidManifest.xml
+      - name: Generate app icons
+        run: dart run flutter_launcher_icons
 
-    - name: Fix R8 ProGuard Issue
-      run: echo "android.r8.proguardAndroidTxt.disallowed=false" >> android/gradle.properties
+      - name: Build release APK
+        run: flutter build apk --release
 
-    - name: Disable R8 Minification
-      run: |
-        if [ -f android/app/build.gradle.kts ]; then
-          echo "Configuring build.gradle.kts..."
-          sed -i 's/isMinifyEnabled true/isMinifyEnabled false/g' android/app/build.gradle.kts
-          sed -i 's/isShrinkResources true/isShrinkResources false/g' android/app/build.gradle.kts
-        elif [ -f android/app/build.gradle ]; then
-          echo "Configuring build.gradle..."
-          sed -i 's/minifyEnabled true/minifyEnabled false/g' android/app/build.gradle
-          sed -i 's/shrinkResources true/shrinkResources false/g' android/app/build.gradle
-        fi
-
-    - name: Build APK
-      run: flutter build apk --release
-
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: release-apk
-        path: build/app/outputs/flutter-apk/app-release.apk
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error

@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
 import '../services/api_service.dart';
+import '../l10n/app_localizations.dart';
 import 'members_screen.dart';
 import 'add_member_screen.dart';
 import 'more_screen.dart';
@@ -25,6 +26,7 @@ import 'entrepreneur_settings_screen.dart';
 import 'video_tutorial_screen.dart';
 import 'guide_screen.dart';
 import 'transaction_history_screen.dart';
+import 'financial_management_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -80,6 +82,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.account_balance_wallet, color: Color(0xFF00796B)),
+              title: const Text("আর্থিক ব্যবস্থাপনা"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (c) => const FinancialManagementScreen()));
+              },
             ),
             ListTile(
               leading: const Icon(
@@ -140,36 +150,18 @@ class _HomeScreenState extends State<HomeScreen> {
           children: pages,
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _selectedIndex,
-        selectedItemColor: const Color(0xFF00796B),
-        unselectedItemColor: Colors.grey,
-        onTap: (index) {
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (index) {
           if (index == _selectedIndex) return;
           setState(() => _selectedIndex = index);
         },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "হোম",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: "সদস্য",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.money),
-            label: "কালেকশন",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: "রিপোর্ট",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.grid_view),
-            label: "আরও",
-          ),
+        destinations: [
+          NavigationDestination(icon: const Icon(Icons.home_outlined), selectedIcon: const Icon(Icons.home_rounded), label: AppLocalizations.of(context).home),
+          NavigationDestination(icon: const Icon(Icons.people_outline), selectedIcon: const Icon(Icons.people_rounded), label: AppLocalizations.of(context).members),
+          NavigationDestination(icon: const Icon(Icons.account_balance_wallet_outlined), selectedIcon: const Icon(Icons.account_balance_wallet), label: AppLocalizations.of(context).collection),
+          NavigationDestination(icon: const Icon(Icons.bar_chart_outlined), selectedIcon: const Icon(Icons.bar_chart), label: AppLocalizations.of(context).reports),
+          NavigationDestination(icon: const Icon(Icons.grid_view_outlined), selectedIcon: const Icon(Icons.grid_view_rounded), label: AppLocalizations.of(context).more),
         ],
       ),
     );

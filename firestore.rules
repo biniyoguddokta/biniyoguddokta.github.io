@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Secure default: deny all client access until the app's role/member
+    // schema is implemented and reviewed in a later batch.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
