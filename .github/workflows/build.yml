@@ -12,15 +12,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2. Set up Java
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: zulu
           java-version: '21'
 
+      # 3. Install Gradle 8.11.1
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      # 4. Set up Flutter
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -28,6 +37,32 @@ jobs:
           channel: stable
           cache: true
 
+      # 5. Generate missing Gradle Wrapper JAR
+      - name: Generate Gradle Wrapper
+        run: |
+          echo "========== GENERATING GRADLE WRAPPER =========="
+
+          cd android
+
+          gradle wrapper \
+            --gradle-version 8.11.1 \
+            --distribution-type all
+
+          chmod +x gradlew
+
+          echo "========== VERIFY WRAPPER FILES =========="
+
+          test -f gradle/wrapper/gradle-wrapper.jar
+          test -f gradle/wrapper/gradle-wrapper.properties
+          test -f gradlew
+
+          ls -lh gradle/wrapper/
+
+          echo "========== ACTUAL GRADLE VERSION =========="
+
+          ./gradlew --version
+
+      # 6. Verify Android project files
       - name: Verify Android project files
         run: |
           echo "========== ANDROID FILE CHECK =========="
@@ -45,15 +80,11 @@ jobs:
               echo "FOUND: $file"
             else
               echo "MISSING: $file"
+              exit 1
             fi
           done
 
-          echo "========== GRADLE WRAPPER PERMISSION =========="
-          ls -l android/gradlew || true
-
-          echo "========== ANDROID FOLDER CONTENTS =========="
-          find android -maxdepth 4 -type f | sort
-
+      # 7. Verify branch and Gradle configuration
       - name: Verify branch and Gradle configuration
         run: |
           echo "========== CURRENT BRANCH =========="
@@ -62,50 +93,45 @@ jobs:
           echo "========== LATEST COMMIT =========="
           git log -1 --oneline
 
-          echo "========== CURRENT DIRECTORY =========="
-          pwd
-
-          echo "========== GRADLE WRAPPER SCRIPT =========="
-          readlink -f android/gradlew || true
-          ls -l android/gradlew || true
-
-          echo "========== GRADLE WRAPPER FILES =========="
-          ls -l android/gradle/wrapper/ || true
-
-          echo "========== ALL WRAPPER CONFIGURATIONS =========="
-          find . -name gradle-wrapper.properties -print
-
-          echo "========== WRAPPER SCRIPT CONFIGURATION =========="
-          grep -nE 'APP_HOME|CLASSPATH|gradle-wrapper' android/gradlew || true
-
-          echo "========== GRADLE WRAPPER PROPERTIES =========="
+          echo "========== GRADLE WRAPPER CONFIGURATION =========="
           cat android/gradle/wrapper/gradle-wrapper.properties
 
-          echo "========== GRADLE WRAPPER JAR CHECKSUM =========="
-          sha256sum android/gradle/wrapper/gradle-wrapper.jar
-
-          echo "========== ACTUAL GRADLE VERSION =========="
+          echo "========== GRADLE VERSION =========="
           cd android
           ./gradlew --version
 
+      # 8. Verify release package
       - name: Verify release package
         run: python3 tool/verify_release.py
 
+      # 9. Install dependencies
       - name: Install dependencies
         run: flutter pub get
 
+      # 10. Run tests
       - name: Run tests
         run: flutter test --no-pub
 
+      # 11. Generate app icons
       - name: Generate app icons
         run: dart run flutter_launcher_icons
 
+      # 12. Build release APK
       - name: Build release APK
         run: flutter build apk --release
 
+      # 13. Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+
+      # 14. Upload generated Gradle Wrapper
+      - name: Upload Gradle Wrapper JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-gradle-wrapper
+          path: android/gradle/wrapper/gradle-wrapper.jar
           if-no-files-found: error
