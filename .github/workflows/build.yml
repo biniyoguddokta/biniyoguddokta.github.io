@@ -12,18 +12,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Set up Java
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: zulu
           java-version: '21'
 
-      # 3. Set up Flutter
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -31,18 +28,32 @@ jobs:
           channel: stable
           cache: true
 
-      # 4. Verify required Android files
       - name: Verify Android project files
         run: |
-          test -f android/settings.gradle
-          test -f android/build.gradle
-          test -f android/gradle.properties
-          test -f android/app/build.gradle
-          test -f android/gradle/wrapper/gradle-wrapper.properties
-          test -f android/gradle/wrapper/gradle-wrapper.jar
-          test -f android/gradlew
+          echo "========== ANDROID FILE CHECK =========="
 
-      # 5. Diagnose branch and Gradle configuration
+          for file in \
+            android/settings.gradle \
+            android/build.gradle \
+            android/gradle.properties \
+            android/app/build.gradle \
+            android/gradle/wrapper/gradle-wrapper.properties \
+            android/gradle/wrapper/gradle-wrapper.jar \
+            android/gradlew
+          do
+            if [ -f "$file" ]; then
+              echo "FOUND: $file"
+            else
+              echo "MISSING: $file"
+            fi
+          done
+
+          echo "========== GRADLE WRAPPER PERMISSION =========="
+          ls -l android/gradlew || true
+
+          echo "========== ANDROID FOLDER CONTENTS =========="
+          find android -maxdepth 4 -type f | sort
+
       - name: Verify branch and Gradle configuration
         run: |
           echo "========== CURRENT BRANCH =========="
@@ -55,17 +66,17 @@ jobs:
           pwd
 
           echo "========== GRADLE WRAPPER SCRIPT =========="
-          readlink -f android/gradlew
-          ls -l android/gradlew
+          readlink -f android/gradlew || true
+          ls -l android/gradlew || true
 
           echo "========== GRADLE WRAPPER FILES =========="
-          ls -l android/gradle/wrapper/
+          ls -l android/gradle/wrapper/ || true
 
           echo "========== ALL WRAPPER CONFIGURATIONS =========="
           find . -name gradle-wrapper.properties -print
 
           echo "========== WRAPPER SCRIPT CONFIGURATION =========="
-          grep -nE 'APP_HOME|CLASSPATH|gradle-wrapper' android/gradlew
+          grep -nE 'APP_HOME|CLASSPATH|gradle-wrapper' android/gradlew || true
 
           echo "========== GRADLE WRAPPER PROPERTIES =========="
           cat android/gradle/wrapper/gradle-wrapper.properties
@@ -77,27 +88,21 @@ jobs:
           cd android
           ./gradlew --version
 
-      # 6. Verify release package
       - name: Verify release package
         run: python3 tool/verify_release.py
 
-      # 7. Install dependencies
       - name: Install dependencies
         run: flutter pub get
 
-      # 8. Run tests
       - name: Run tests
         run: flutter test --no-pub
 
-      # 9. Generate app icons
       - name: Generate app icons
         run: dart run flutter_launcher_icons
 
-      # 10. Build release APK
       - name: Build release APK
         run: flutter build apk --release
 
-      # 11. Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
