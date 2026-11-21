@@ -1,3 +1,4 @@
+
 name: somiti_app
 description: A new Flutter project.
 publish_to: 'none'
@@ -14,11 +15,11 @@ dependencies:
   http: ^1.1.0
   google_fonts: ^6.1.0
   carousel_slider: ^5.0.0
-  shared_preferences: 2.2.2 
-  intl: ^0.18.1
+  shared_preferences: 2.2.2
+  intl: ^0.20.3
   fl_chart: ^0.65.0
   marquee: ^2.2.3
-  youtube_player_flutter: ^9.0.4 
+  youtube_player_flutter: ^9.0.4
   image_picker: ^1.0.7
   pdf: ^3.11.3
   printing: ^5.14.2
@@ -28,7 +29,8 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   timezone: ^0.10.0
   flutter_timezone: ^4.1.1
-  # Firebase foundation (initialization is opt-in until project keys are supplied)
+
+  # Firebase foundation
   firebase_core: ^4.2.1
   firebase_auth: ^6.1.2
   cloud_firestore: ^6.1.0
@@ -42,7 +44,7 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: false
-  image_path: "assets/app_icon.png" # 🔥 আপনার লোগোর নাম
+  image_path: "assets/app_icon.png"
 
 dependency_overrides:
   flutter_inappwebview: ^6.0.0
