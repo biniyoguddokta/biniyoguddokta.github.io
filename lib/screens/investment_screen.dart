@@ -13,6 +13,7 @@ class InvestmentScreen extends StatefulWidget {
 
 class _InvestmentScreenState extends State<InvestmentScreen> {
   List<dynamic> investments = [];
+  List<Map<String, dynamic>> installmentContracts = [];
   bool isLoading = true;
   String selectedTab = "সক্রিয়";
 
@@ -24,12 +25,23 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
 
   void _fetchData() async {
     setState(() => isLoading = true);
-    var res = await ApiService.getInvestments();
-    if (res is List) {
-      setState(() { investments = res; isLoading = false; });
-    } else {
-      setState(() => isLoading = false);
-    }
+    final results = await Future.wait([
+      ApiService.getInvestments(),
+      ApiService.getInstallmentData(),
+    ]);
+    if (!mounted) return;
+    final investmentResult = results[0];
+    final installmentResult = results[1];
+    setState(() {
+      if (investmentResult is List) investments = investmentResult;
+      if (installmentResult is Map && installmentResult['contracts'] is List) {
+        installmentContracts = (installmentResult['contracts'] as List)
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      }
+      isLoading = false;
+    });
   }
 
   // 🔥 প্রজেক্ট সম্পূর্ণ করার ডায়ালগ
@@ -143,13 +155,17 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
           Expanded(
             child: isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : filteredInvestments.isEmpty
+                : filteredInvestments.isEmpty && installmentContracts.isEmpty
                     ? const Center(child: Text("কোনো বিনিয়োগ পাওয়া যায়নি!"))
                     : ListView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: 15),
-                        itemCount: filteredInvestments.length,
+                        itemCount: installmentContracts.length + filteredInvestments.length,
                         itemBuilder: (context, index) {
-                          var inv = filteredInvestments[index];
+                          if (index < installmentContracts.length) {
+                            return _buildInstallmentInvestmentCard(installmentContracts[index]);
+                          }
+                          final investmentIndex = index - installmentContracts.length;
+                          var inv = filteredInvestments[investmentIndex];
                           bool isActive = inv['Status'] == 'সক্রিয়';
                           
                           return Card(
@@ -229,6 +245,39 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
             child: const Icon(Icons.add, color: Colors.white),
           )
         : null,
+    );
+  }
+
+
+  Widget _buildInstallmentInvestmentCard(Map<String, dynamic> contract) {
+    final sale = num.tryParse((contract['SalePrice'] ?? '0').toString()) ?? 0;
+    final down = num.tryParse((contract['DownPayment'] ?? '0').toString()) ?? 0;
+    final months = num.tryParse((contract['Months'] ?? '0').toString()) ?? 0;
+    final contractId = (contract['ContractID'] ?? '').toString();
+    return Card(
+      color: Colors.white,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: Padding(
+        padding: const EdgeInsets.all(15),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          if (installmentContracts.first['ContractID'] == contractId)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 10),
+              child: Text('কিস্তিতে পণ্যের বিনিয়োগ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF142F52))),
+            ),
+          Row(children: [
+            const Icon(Icons.shopping_bag_outlined, color: Color(0xFF142F52)),
+            const SizedBox(width: 8),
+            Expanded(child: Text((contract['ProductName'] ?? 'কিস্তির পণ্য').toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15))),
+            Text((contract['Status'] ?? 'চলমান').toString(), style: const TextStyle(color: Color(0xFF00796B), fontSize: 12)),
+          ]),
+          const SizedBox(height: 7),
+          Text('ক্রেতা: ${(contract['MemberName'] ?? '').toString()}'),
+          Text('বিক্রয়মূল্য: ৳ ${sale.toStringAsFixed(0)}  •  মেয়াদ: ${months.toStringAsFixed(0)} মাস'),
+          Text('ডাউনপেমেন্ট: ৳ ${down.toStringAsFixed(0)}'),
+        ]),
+      ),
     );
   }
 

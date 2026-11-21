@@ -30,6 +30,7 @@ class _LateFeeScreenState extends State<LateFeeScreen> {
 
   void _loadUser() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() => userRole = prefs.getString('userRole') ?? "Member");
   }
 
@@ -38,20 +39,17 @@ class _LateFeeScreenState extends State<LateFeeScreen> {
     var res = await ApiService.getTransactions();
     var memRes = await ApiService.getAllMembers();
     
+    if (!mounted) return;
     if (res is List && memRes is List) {
       setState(() {
         // 🔥 এখানে ফিল্টারিং লজিক আপডেট করা হয়েছে 🔥
         lateFees = res.where((tx) {
-          String type = tx['Type'].toString();
-          String note = tx['Note'].toString();
-          
-          // ১. সরাসরি 'বিলম্ব ফী' টাইপ হলে নিবে
-          if (type == 'বিলম্ব ফী') return true;
-          
-          // ২. 'বকেয়া' হলে নোটে অবশ্যই 'বিলম্ব ফী' লেখা থাকতে হবে (মাসিক চাঁদা বাদ দেওয়ার জন্য)
-          if (type == 'বকেয়া' && note.contains('বিলম্ব ফী')) return true;
-          
-          return false;
+          final type = (tx['Type'] ?? '').toString().trim();
+          final note = (tx['Note'] ?? '').toString().trim();
+          // নতুন ম্যানুয়াল জরিমানা এবং আগের অটো-জেনারেট হওয়া জরিমানার রেকর্ড
+          // দেখাবে; সাধারণ মাসিক বকেয়া কখনো Late Fee হিসেবে দেখাবে না।
+          final isLateFeeType = type == 'বিলম্ব ফী' || type == 'বিলম্ব ফি' || type == 'জরিমানা';
+          return isLateFeeType && note.toLowerCase().contains('বিলম্ব');
         }).toList().reversed.toList();
         
         members = memRes;
@@ -64,7 +62,8 @@ class _LateFeeScreenState extends State<LateFeeScreen> {
 
   void _generateAutoDue() async {
     setState(() => isLoading = true);
-    var res = await ApiService.generateAutoDue(); 
+    var res = await ApiService.generateAutoDue();
+    if (!mounted) return;
     setState(() => isLoading = false);
 
     if (res['status'] == "success") {
@@ -78,7 +77,8 @@ class _LateFeeScreenState extends State<LateFeeScreen> {
   }
 
   void _addLateFee() async {
-    if (_selectedMember == null || _amountController.text.isEmpty) {
+    final amount = num.tryParse(_amountController.text.trim());
+    if (_selectedMember == null || amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("সদস্য এবং পরিমাণ নির্বাচন করুন"), backgroundColor: Colors.orange));
       return;
     }
@@ -87,19 +87,21 @@ class _LateFeeScreenState extends State<LateFeeScreen> {
     
     var res = await ApiService.addTransaction(
       type: 'বিলম্ব ফী',
-      amount: _amountController.text.trim(),
-      note: _noteController.text.trim().isEmpty ? 'বিলম্ব ফী' : _noteController.text.trim(),
+      amount: amount.toString(),
+      note: _noteController.text.trim().isEmpty ? 'ম্যানুয়াল বিলম্ব ফী' : 'বিলম্ব ফী: ${_noteController.text.trim()}', 
       memberName: _selectedMember!,
       status: _status, 
       date: DateFormat('yyyy-MM-dd').format(DateTime.now()),
       paymentMethod: 'HAND CASH', 
     );
     
+    if (!mounted) return;
     setState(() => isLoading = false);
 
-    if (res['status'] == "success" || (res['status'] == "error" && res['message'].contains("302"))) {
+    if (res['status'] == "success" || res['message'] == "Success (302)") {
       _amountController.clear();
       _noteController.clear();
+      setState(() => _selectedMember = null);
       _fetchData();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("বিলম্ব ফী যোগ হয়েছে!"), backgroundColor: Colors.green));
@@ -136,10 +138,12 @@ class _LateFeeScreenState extends State<LateFeeScreen> {
 
   // 🔥 আসল পেমেন্ট প্রসেস (API কল)
   void _processPayment(String rowIndex) async {
+    if (!mounted) return;
     setState(() => isLoading = true);
     var res = await ApiService.updateTransactionStatus(rowIndex: rowIndex, status: 'Paid');
-    
-    if (res['status'] == 'success' || res['message'] == 'Updated' || res['message'].contains("302")) {
+    if (!mounted) return;
+
+    if (res['status'] == 'success' || res['message'] == 'Updated' || (res['message'] ?? '').toString().contains("302")) {
       _fetchData(); // ডেটা রিফ্রেশ করবে
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("সফলভাবে পরিশোধ হয়েছে!"), backgroundColor: Colors.green));
@@ -161,7 +165,7 @@ class _LateFeeScreenState extends State<LateFeeScreen> {
         actions: [
           if (userRole == 'Admin')
             IconButton(
-              tooltip: "মাসিক বকেয়া জেনারেট করুন",
+              tooltip: "শুধু মাসিক বকেয়া তৈরি করুন (জরিমানা নয়)",
               icon: const Icon(Icons.autorenew),
               onPressed: _generateAutoDue,
             )

@@ -122,14 +122,14 @@ class _InstallmentProductScreenState extends State<InstallmentProductScreen> {
     DateTime paidDate = DateTime.now();
     final ok = await showDialog<bool>(context: context, builder: (ctx) => StatefulBuilder(builder: (ctx, refresh) => AlertDialog(
       title: const Text('কিস্তি আদায়'),
-      content: Column(mainAxisSize: MainAxisSize.min, children: [
+      content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
         Text('${contract['memberName']} • ${contract['productName']}'),
         const SizedBox(height: 12),
-        TextField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'আদায়কৃত টাকা (৳)')),
+        TextField(controller: amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'আদায়কৃত টাকা (৳)')),
         TextField(controller: note, decoration: const InputDecoration(labelText: 'নোট (ঐচ্ছিক)')),
         const SizedBox(height: 8),
         OutlinedButton.icon(onPressed: () async { final d = await showDatePicker(context: ctx, initialDate: paidDate, firstDate: DateTime(2020), lastDate: DateTime(2100)); if (d != null) refresh(() => paidDate = d); }, icon: const Icon(Icons.calendar_month), label: Text(_dateText(paidDate))),
-      ]),
+      ])),
       actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('বাতিল')), ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('আদায় সংরক্ষণ'))],
     )));
     final value = _n(amount.text);
@@ -279,8 +279,16 @@ class _InstallmentProductScreenState extends State<InstallmentProductScreen> {
     for (final c in _contracts) {
       final dp = _n(c['downPayment']);
       if (dp > 0) rows.add({'member': c['memberName'], 'product': c['productName'], 'amount': dp, 'date': c['startDate'], 'note': 'ডাউনপেমেন্ট'});
-      for (final p in (c['payments'] as List? ?? [])) {
-        rows.add({'member': c['memberName'], 'product': c['productName'], 'amount': _n(p['amount']), 'date': p['date'], 'note': p['note'] ?? 'মাসিক কিস্তি'});
+      for (final rawPayment in (c['payments'] as List? ?? [])) {
+        if (rawPayment is! Map) continue;
+        final p = Map<String, dynamic>.from(rawPayment);
+        rows.add({
+          'member': (c['memberName'] ?? 'অজানা ক্রেতা').toString(),
+          'product': (c['productName'] ?? 'পণ্য').toString(),
+          'amount': _n(p['amount']),
+          'date': p['date'] ?? c['startDate'],
+          'note': (p['note'] ?? 'মাসিক কিস্তি').toString(),
+        });
       }
     }
     rows.sort((a,b) => _date(b['date']).compareTo(_date(a['date'])));

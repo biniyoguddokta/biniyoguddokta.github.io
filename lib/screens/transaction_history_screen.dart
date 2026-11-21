@@ -24,7 +24,10 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     if (res is List) {
       setState(() {
         // 🔥 শুধুমাত্র Paid (পরিশোধিত) লেনদেনগুলো ফিল্টার করে নেওয়া হলো
-        List<dynamic> paidTransactions = res.where((tx) => tx['Status'] == 'Paid').toList();
+        List<dynamic> paidTransactions = res.where((tx) {
+          final status = (tx['Status'] ?? '').toString().trim().toLowerCase();
+          return status == 'paid' || status == 'পরিশোধিত';
+        }).toList();
         // নতুন লেনদেন আগে দেখানোর জন্য রিভার্স
         allTransactions = paidTransactions.reversed.toList();
         isLoading = false;
