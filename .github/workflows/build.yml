@@ -37,7 +37,27 @@ jobs:
           channel: stable
           cache: true
 
-      # 5. Generate missing Gradle Wrapper JAR
+      # 5. Create Android local.properties
+      - name: Configure Android local.properties
+        run: |
+          echo "========== FLUTTER SDK =========="
+          echo "$FLUTTER_ROOT"
+
+          echo "========== ANDROID SDK =========="
+          echo "$ANDROID_HOME"
+
+          mkdir -p android
+
+          echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
+          echo "sdk.dir=$ANDROID_HOME" >> android/local.properties
+
+          echo "========== LOCAL PROPERTIES =========="
+          cat android/local.properties
+
+          test -d "$FLUTTER_ROOT"
+          test -d "$ANDROID_HOME"
+
+      # 6. Generate Gradle Wrapper
       - name: Generate Gradle Wrapper
         run: |
           echo "========== GENERATING GRADLE WRAPPER =========="
@@ -62,7 +82,7 @@ jobs:
 
           ./gradlew --version
 
-      # 6. Verify Android project files
+      # 7. Verify Android project files
       - name: Verify Android project files
         run: |
           echo "========== ANDROID FILE CHECK =========="
@@ -74,7 +94,8 @@ jobs:
             android/app/build.gradle \
             android/gradle/wrapper/gradle-wrapper.properties \
             android/gradle/wrapper/gradle-wrapper.jar \
-            android/gradlew
+            android/gradlew \
+            android/local.properties
           do
             if [ -f "$file" ]; then
               echo "FOUND: $file"
@@ -84,7 +105,7 @@ jobs:
             fi
           done
 
-      # 7. Verify branch and Gradle configuration
+      # 8. Verify branch and Gradle configuration
       - name: Verify branch and Gradle configuration
         run: |
           echo "========== CURRENT BRANCH =========="
@@ -100,27 +121,27 @@ jobs:
           cd android
           ./gradlew --version
 
-      # 8. Verify release package
+      # 9. Verify release package
       - name: Verify release package
         run: python3 tool/verify_release.py
 
-      # 9. Install dependencies
+      # 10. Install dependencies
       - name: Install dependencies
         run: flutter pub get
 
-      # 10. Run tests
+      # 11. Run tests
       - name: Run tests
         run: flutter test --no-pub
 
-      # 11. Generate app icons
+      # 12. Generate app icons
       - name: Generate app icons
         run: dart run flutter_launcher_icons
 
-      # 12. Build release APK
+      # 13. Build release APK
       - name: Build release APK
         run: flutter build apk --release
 
-      # 13. Upload APK
+      # 14. Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
@@ -128,7 +149,7 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
 
-      # 14. Upload generated Gradle Wrapper
+      # 15. Upload generated Gradle Wrapper
       - name: Upload Gradle Wrapper JAR
         uses: actions/upload-artifact@v4
         with:
