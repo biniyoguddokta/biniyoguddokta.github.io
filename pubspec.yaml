@@ -1,3 +1,4 @@
+
 name: somiti_app
 description: A new Flutter project.
 publish_to: 'none'
@@ -14,11 +15,11 @@ dependencies:
   http: ^1.1.0
   google_fonts: ^6.1.0
   carousel_slider: ^5.0.0
-  shared_preferences: 2.2.2 
+  shared_preferences: 2.2.2
   intl: ^0.20.3
   fl_chart: ^0.65.0
   marquee: ^2.2.3
-  youtube_player_flutter: ^9.0.4 
+  youtube_player_flutter: ^9.0.4
   image_picker: ^1.0.7
   pdf: ^3.11.3
   printing: ^5.14.2
