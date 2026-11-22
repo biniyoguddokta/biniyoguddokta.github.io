@@ -1,8 +1,7 @@
 #!/usr/bin/env sh
-# Self-contained Gradle launcher: downloads the pinned Gradle distribution when needed.
+# Pinned Gradle launcher. Keep this version aligned with gradle-wrapper.properties.
 set -eu
-APP_HOME=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
-GRADLE_VERSION=8.7
+GRADLE_VERSION=8.11.1
 GRADLE_USER_HOME=${GRADLE_USER_HOME:-$HOME/.gradle}
 GRADLE_HOME="$GRADLE_USER_HOME/wrapper/manual/gradle-$GRADLE_VERSION"
 if [ ! -x "$GRADLE_HOME/bin/gradle" ]; then
@@ -12,7 +11,8 @@ if [ ! -x "$GRADLE_HOME/bin/gradle" ]; then
     if command -v curl >/dev/null 2>&1; then
       curl -fL "https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip" -o "$ZIP"
     else
-      echo 'curl is required to download Gradle.' >&2; exit 1
+      echo 'curl is required to download Gradle.' >&2
+      exit 1
     fi
   fi
   unzip -q -o "$ZIP" -d "$GRADLE_USER_HOME/wrapper/manual"
