@@ -46,7 +46,7 @@ class _AdminManageScreenState extends State<AdminManageScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("সদস্য ম্যানেজ করুন"), backgroundColor: const Color(0xFF00796B), foregroundColor: Colors.white),
+      appBar: AppBar(title: const Text("সদস্য ম্যানেজ করুন"), backgroundColor: const Color(0xFF142F52), foregroundColor: Colors.white),
       body: isLoading ? const Center(child: CircularProgressIndicator()) : ListView.builder(
         itemCount: members.length,
         itemBuilder: (context, index) {

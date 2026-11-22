@@ -69,7 +69,7 @@ class _MeetingScreenState extends State<MeetingScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("বাতিল")),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00796B)),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF142F52)),
             onPressed: () async {
               if (titleController.text.isNotEmpty) {
                 setState(() => isLoading = true);
@@ -89,7 +89,7 @@ class _MeetingScreenState extends State<MeetingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(title: const Text("সভা সমূহ"), backgroundColor: const Color(0xFF00796B), foregroundColor: Colors.white),
+      appBar: AppBar(title: const Text("সভা সমূহ"), backgroundColor: const Color(0xFF142F52), foregroundColor: Colors.white),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : meetings.isEmpty
@@ -103,7 +103,7 @@ class _MeetingScreenState extends State<MeetingScreen> {
                       color: Colors.white,
                       margin: const EdgeInsets.only(bottom: 10),
                       child: ExpansionTile(
-                        leading: const Icon(Icons.calendar_month, color: Color(0xFF00796B)),
+                        leading: const Icon(Icons.calendar_month, color: Color(0xFF142F52)),
                         title: Text(m['Title'].toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text("তারিখ: ${m['Date']}"),
                         children: [
@@ -119,7 +119,7 @@ class _MeetingScreenState extends State<MeetingScreen> {
       // 🔥 শুধু অ্যাডমিন + বাটন দেখবে
       floatingActionButton: userRole == 'Admin' 
         ? FloatingActionButton(
-            backgroundColor: const Color(0xFF00796B),
+            backgroundColor: const Color(0xFF142F52),
             onPressed: _showAddDialog,
             child: const Icon(Icons.add, color: Colors.white),
           )

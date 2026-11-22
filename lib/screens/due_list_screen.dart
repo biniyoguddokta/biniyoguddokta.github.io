@@ -138,7 +138,7 @@ class _DueListScreenState extends State<DueListScreen> {
             child: const Text("বাতিল", style: TextStyle(color: Colors.grey))
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00796B)),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF142F52)),
             onPressed: () {
               Navigator.pop(context); 
               _payDue(rowIndex, amount, memberName, type); 

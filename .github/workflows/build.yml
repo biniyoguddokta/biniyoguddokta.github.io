@@ -1,158 +1,58 @@
-
 name: Build APK
 
 on:
   push:
-    branches:
-      - '**'
+    branches: ['**']
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Set up Java
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: zulu
           java-version: '21'
 
-      # 3. Install Gradle 8.11.1
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.11.1'
-
-      # 4. Set up Flutter
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.44.9'
           channel: stable
           cache: true
 
-      # 5. Create Android local.properties
-      - name: Configure Android local.properties
+      - name: Verify permanent Android project
         run: |
-          echo "========== FLUTTER SDK =========="
-          echo "$FLUTTER_ROOT"
+          test -f android/settings.gradle
+          test -f android/build.gradle
+          test -f android/gradle.properties
+          test -f android/app/build.gradle
+          test -f android/app/src/main/AndroidManifest.xml
+          test -f android/app/src/main/kotlin/com/example/somiti_app/MainActivity.kt
+          test -f android/gradle/wrapper/gradle-wrapper.properties
+          test -x android/gradlew
 
-          echo "========== ANDROID SDK =========="
-          echo "$ANDROID_HOME"
-
-          mkdir -p android
-
-          echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
-          echo "sdk.dir=$ANDROID_HOME" >> android/local.properties
-
-          echo "========== LOCAL PROPERTIES =========="
-          cat android/local.properties
-
-          test -d "$FLUTTER_ROOT"
-          test -d "$ANDROID_HOME"
-
-      # 6. Generate Gradle Wrapper
-      - name: Generate Gradle Wrapper
-        run: |
-          echo "========== GENERATING GRADLE WRAPPER =========="
-
-          cd android
-
-          gradle wrapper \
-            --gradle-version 8.11.1 \
-            --distribution-type all
-
-          chmod +x gradlew
-
-          echo "========== VERIFY WRAPPER FILES =========="
-
-          test -f gradle/wrapper/gradle-wrapper.jar
-          test -f gradle/wrapper/gradle-wrapper.properties
-          test -f gradlew
-
-          ls -lh gradle/wrapper/
-
-          echo "========== ACTUAL GRADLE VERSION =========="
-
-          ./gradlew --version
-
-      # 7. Verify Android project files
-      - name: Verify Android project files
-        run: |
-          echo "========== ANDROID FILE CHECK =========="
-
-          for file in \
-            android/settings.gradle \
-            android/build.gradle \
-            android/gradle.properties \
-            android/app/build.gradle \
-            android/gradle/wrapper/gradle-wrapper.properties \
-            android/gradle/wrapper/gradle-wrapper.jar \
-            android/gradlew \
-            android/local.properties
-          do
-            if [ -f "$file" ]; then
-              echo "FOUND: $file"
-            else
-              echo "MISSING: $file"
-              exit 1
-            fi
-          done
-
-      # 8. Verify branch and Gradle configuration
-      - name: Verify branch and Gradle configuration
-        run: |
-          echo "========== CURRENT BRANCH =========="
-          git branch --show-current
-
-          echo "========== LATEST COMMIT =========="
-          git log -1 --oneline
-
-          echo "========== GRADLE WRAPPER CONFIGURATION =========="
-          cat android/gradle/wrapper/gradle-wrapper.properties
-
-          echo "========== GRADLE VERSION =========="
-          cd android
-          ./gradlew --version
-
-      # 9. Verify release package
-      - name: Verify release package
+      - name: Verify release package and protected installment screen
         run: python3 tool/verify_release.py
 
-      # 10. Install dependencies
       - name: Install dependencies
         run: flutter pub get
 
-      # 11. Run tests
-      - name: Run tests
+      - name: Run localization smoke tests
         run: flutter test --no-pub
 
-      # 12. Generate app icons
       - name: Generate app icons
         run: dart run flutter_launcher_icons
 
-      # 13. Build release APK
       - name: Build release APK
         run: flutter build apk --release
 
-      # 14. Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
-
-      # 15. Upload generated Gradle Wrapper
-      - name: Upload Gradle Wrapper JAR
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-gradle-wrapper
-          path: android/gradle/wrapper/gradle-wrapper.jar
           if-no-files-found: error

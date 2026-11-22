@@ -58,7 +58,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
         title: const Text("সব কালেকশন"),
-        backgroundColor: const Color(0xFF00796B),
+        backgroundColor: const Color(0xFF142F52),
         foregroundColor: Colors.white,
         actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchData)],
       ),
@@ -69,9 +69,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
             padding: const EdgeInsets.all(15),
             margin: const EdgeInsets.all(15),
             decoration: BoxDecoration(
-              color: const Color(0xFF00796B),
+              color: const Color(0xFF142F52),
               borderRadius: BorderRadius.circular(15),
-              boxShadow: [BoxShadow(color: const Color(0xFF00796B).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
+              boxShadow: [BoxShadow(color: const Color(0xFF142F52).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,

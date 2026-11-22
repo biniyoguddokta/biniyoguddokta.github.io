@@ -101,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
             height: MediaQuery.of(context).size.height * 0.55,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF004D40), Color(0xFF00796B)],
+                colors: [Color(0xFF004D40), Color(0xFF142F52)],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -161,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // ফোন নম্বর ইনপুট
-                        const Text("ফোন নম্বর", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00796B))),
+                        const Text("ফোন নম্বর", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF142F52))),
                         const SizedBox(height: 10),
                         TextField(
                           controller: _phoneController,
@@ -169,7 +169,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: Colors.grey[100],
-                            prefixIcon: const Icon(Icons.phone, color: Color(0xFF00796B)),
+                            prefixIcon: const Icon(Icons.phone, color: Color(0xFF142F52)),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(15),
                               borderSide: BorderSide.none,
@@ -179,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 20),
                         
                         // পিন ইনপুট
-                        const Text("পিন", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00796B))),
+                        const Text("পিন", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF142F52))),
                         const SizedBox(height: 10),
                         TextField(
                           controller: _pinController,
@@ -188,7 +188,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: Colors.grey[100],
-                            prefixIcon: const Icon(Icons.lock, color: Color(0xFF00796B)),
+                            prefixIcon: const Icon(Icons.lock, color: Color(0xFF142F52)),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
@@ -214,7 +214,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           height: 55,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF00796B),
+                              backgroundColor: const Color(0xFF142F52),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                             ),
                             onPressed: _isLoading ? null : _login,

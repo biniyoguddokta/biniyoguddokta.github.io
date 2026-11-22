@@ -62,7 +62,7 @@ class _MembersScreenState extends State<MembersScreen> {
       backgroundColor: const Color(0xFFF5F7FA), // ব্যাকগ্রাউন্ড কালার
       appBar: AppBar(
         title: const Text("সদস্য তালিকা"),
-        backgroundColor: const Color(0xFF00796B),
+        backgroundColor: const Color(0xFF142F52),
         foregroundColor: Colors.white,
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchMembers)
@@ -108,14 +108,16 @@ class _MembersScreenState extends State<MembersScreen> {
                               contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
                               leading: CircleAvatar(
                                 radius: 25,
-                                backgroundColor: isAdmin ? const Color(0xFF00796B) : Colors.blue,
-                                child: Text(name.substring(0, 1).toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                backgroundColor: const Color(0xFF142F52),
+                                backgroundImage: (member['ProfilePicUrl'] ?? '').toString().isNotEmpty ? NetworkImage(member['ProfilePicUrl'].toString()) : null,
+                                child: (member['ProfilePicUrl'] ?? '').toString().isEmpty ? Text(name.isEmpty ? '?' : name.substring(0, 1).toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)) : null,
                               ),
                               title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                              subtitle: Text(designation, style: TextStyle(color: isAdmin ? const Color(0xFF00796B) : Colors.grey, fontWeight: isAdmin ? FontWeight.bold : FontWeight.normal)),
+                              subtitle: Text(designation, style: TextStyle(color: isAdmin ? const Color(0xFF142F52) : Colors.grey, fontWeight: isAdmin ? FontWeight.bold : FontWeight.normal)),
                               trailing: isAdmin ? const Icon(Icons.workspace_premium, color: Colors.amber) : const Icon(Icons.circle, color: Colors.green, size: 12),
-                              onTap: () {
-                                Navigator.push(context, MaterialPageRoute(builder: (c) => MemberProfileScreen(member: member)));
+                              onTap: () async {
+                                await Navigator.push(context, MaterialPageRoute(builder: (c) => MemberProfileScreen(member: member)));
+                                if (mounted) _fetchMembers();
                               },
                             ),
                           );

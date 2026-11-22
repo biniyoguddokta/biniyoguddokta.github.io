@@ -18,7 +18,7 @@ class _VideoTutorialScreenState extends State<VideoTutorialScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(title: const Text("ভিডিও টিউটোরিয়াল"), backgroundColor: const Color(0xFF00796B), foregroundColor: Colors.white),
+      appBar: AppBar(title: const Text("ভিডিও টিউটোরিয়াল"), backgroundColor: const Color(0xFF142F52), foregroundColor: Colors.white),
       body: ListView.builder(
         padding: const EdgeInsets.all(15),
         itemCount: videos.length,
@@ -33,7 +33,7 @@ class _VideoTutorialScreenState extends State<VideoTutorialScreen> {
                 width: 100,
                 height: 70,
                 decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(10)),
-                child: const Center(child: Icon(Icons.play_circle_fill, color: Color(0xFF00796B), size: 40)),
+                child: const Center(child: Icon(Icons.play_circle_fill, color: Color(0xFF142F52), size: 40)),
               ),
               title: Text(videos[index]['title']!, style: const TextStyle(fontWeight: FontWeight.bold)),
               subtitle: const Text("ভিডিও দেখতে ক্লিক করুন", style: TextStyle(color: Colors.grey)),
@@ -79,13 +79,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title), backgroundColor: const Color(0xFF00796B), foregroundColor: Colors.white),
+      appBar: AppBar(title: Text(widget.title), backgroundColor: const Color(0xFF142F52), foregroundColor: Colors.white),
       body: Column(
         children: [
           YoutubePlayer(
             controller: _controller,
             showVideoProgressIndicator: true,
-            progressIndicatorColor: const Color(0xFF00796B),
+            progressIndicatorColor: const Color(0xFF142F52),
           ),
           const Padding(
             padding: EdgeInsets.all(15.0),

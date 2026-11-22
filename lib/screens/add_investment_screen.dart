@@ -52,7 +52,7 @@ class _AddInvestmentScreenState extends State<AddInvestmentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("নতুন বিনিয়োগ"), backgroundColor: const Color(0xFF00796B), foregroundColor: Colors.white),
+      appBar: AppBar(title: const Text("নতুন বিনিয়োগ"), backgroundColor: const Color(0xFF142F52), foregroundColor: Colors.white),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -81,7 +81,7 @@ class _AddInvestmentScreenState extends State<AddInvestmentScreen> {
             SizedBox(
               width: double.infinity, height: 50,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00796B), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF142F52), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
                 onPressed: _isLoading ? null : _submit,
                 child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text("সেভ করুন", style: TextStyle(color: Colors.white, fontSize: 18)),
               ),

@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
 import '../services/api_service.dart';
+import '../app_state.dart';
+import 'advanced_features_screen.dart';
 import '../l10n/app_localizations.dart';
 import 'members_screen.dart';
 import 'add_member_screen.dart';
@@ -27,6 +29,9 @@ import 'video_tutorial_screen.dart';
 import 'guide_screen.dart';
 import 'transaction_history_screen.dart';
 import 'financial_management_screen.dart';
+import 'loss_project_screen.dart';
+import '../services/loss_project_service.dart';
+import 'pledge_documents_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -58,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const DrawerHeader(
               decoration: BoxDecoration(
-                color: Color(0xFF00796B),
+                color: Color(0xFF142F52),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.account_balance_wallet, color: Color(0xFF00796B)),
+              leading: const Icon(Icons.account_balance_wallet, color: Color(0xFF142F52)),
               title: const Text("আর্থিক ব্যবস্থাপনা"),
               onTap: () {
                 Navigator.pop(context);
@@ -94,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ListTile(
               leading: const Icon(
                 Icons.calendar_month,
-                color: Color(0xFF00796B),
+                color: Color(0xFF142F52),
               ),
               title: const Text("সভা (মিটিং)"),
               onTap: () {
@@ -121,6 +126,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     builder: (c) => const LateFeeScreen(),
                   ),
                 );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.description_outlined, color: Color(0xFFD0A522)),
+              title: const Text("অঙ্গীকারনামা"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (c) => const PledgeDocumentsScreen()));
               },
             ),
             ListTile(
@@ -186,7 +199,8 @@ class HomeContentState extends State<HomeContent> {
 
   Timer? _balanceTimer;
 
-  bool isBengali = true;
+  String _profilePicUrl = '';
+  String _userPhone = '';
 
   double cashInHand = 0.0;
   double todayDeposit = 0.0;
@@ -226,7 +240,26 @@ class HomeContentState extends State<HomeContent> {
     setState(() {
       userName = prefs.getString('userName') ?? "User";
       userRole = prefs.getString('userRole') ?? "Member";
+      _userPhone = prefs.getString('userPhone') ?? '';
+      _profilePicUrl = prefs.getString('userPic') ?? '';
     });
+    _refreshOwnProfilePhoto();
+  }
+
+  Future<void> _refreshOwnProfilePhoto() async {
+    if (_userPhone.isEmpty) return;
+    try {
+      final result = await ApiService.getAllMembers();
+      if (result is! List) return;
+      String clean(String v) => v.replaceAll(RegExp(r'\D'), '').replaceFirst(RegExp(r'^880'), '').replaceFirst(RegExp(r'^0'), '');
+      final me = result.cast<dynamic>().whereType<Map>().firstWhere((m) => clean('${m['Phone'] ?? ''}') == clean(_userPhone), orElse: () => <String,dynamic>{});
+      final url = (me['ProfilePicUrl'] ?? '').toString();
+      if (url.isNotEmpty && mounted) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('userPic', url);
+        setState(() => _profilePicUrl = url.contains('?') ? '$url&t=${DateTime.now().millisecondsSinceEpoch}' : '$url?t=${DateTime.now().millisecondsSinceEpoch}');
+      }
+    } catch (_) {}
   }
 
   void _toggleBalance() {
@@ -272,10 +305,14 @@ class HomeContentState extends State<HomeContent> {
         ApiService.getTransactions(),
         ApiService.getAllMembers(),
         ApiService.getInvestments().catchError((_) => null),
+        ApiService.getInstallmentData().catchError((_) => null),
+        LossProjectService.load(),
       ]);
       final response = results[0];
       final membersRes = results[1];
       final investmentsRes = results[2];
+      final installmentRes = results[3];
+      final lossRows = results[4] is List ? (results[4] as List).whereType<Map<String, dynamic>>().toList() : <Map<String, dynamic>>[];
 
       if (!mounted) return;
 
@@ -384,6 +421,27 @@ class HomeContentState extends State<HomeContent> {
           }
         }
 
+        // কিস্তিতে পণ্যের সম্ভাব্য নিট মুনাফা (মোট মুনাফা - ব্যবসায়িক ব্যয়)
+        // এবং লোকাল Loss Project-এর নিট ক্ষতি মোট সম্পদে একবারই সমন্বয় হবে।
+        double installmentNetProfit = 0;
+        if (installmentRes is Map && installmentRes['error'] == null) {
+          final contracts = (installmentRes['contracts'] as List? ?? []);
+          final expenses = (installmentRes['expenses'] as List? ?? []);
+          final grossProfit = contracts.fold<double>(0, (sum, item) {
+            if (item is! Map) return sum;
+            final sale = double.tryParse((item['SalePrice'] ?? '0').toString().replaceAll(',', '')) ?? 0;
+            final cost = double.tryParse((item['CostPrice'] ?? '0').toString().replaceAll(',', '')) ?? 0;
+            return sum + sale - cost;
+          });
+          final installmentExpenses = expenses.fold<double>(0, (sum, item) {
+            if (item is! Map) return sum;
+            return sum + (double.tryParse((item['Amount'] ?? '0').toString().replaceAll(',', '')) ?? 0);
+          });
+          installmentNetProfit = grossProfit - installmentExpenses;
+        }
+        final localNetLoss = LossProjectService.netLoss(lossRows);
+        tempTotalAssets += installmentNetProfit - localNetLoss;
+
         int tempPendingCount = 0;
 
         if (membersRes is List) {
@@ -463,7 +521,7 @@ class HomeContentState extends State<HomeContent> {
         children: [
           Row(
             children: [
-              const Icon(Icons.trending_up, color: Color(0xFF00796B), size: 21),
+              const Icon(Icons.trending_up, color: Color(0xFF142F52), size: 21),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -522,12 +580,12 @@ class HomeContentState extends State<HomeContent> {
                       height: 38,
                       width: 38,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF00796B).withOpacity(0.10),
+                        color: const Color(0xFF142F52).withOpacity(0.10),
                         borderRadius: BorderRadius.circular(11),
                       ),
                       child: const Icon(
                         Icons.account_balance_wallet_outlined,
-                        color: Color(0xFF00796B),
+                        color: Color(0xFF142F52),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -610,17 +668,18 @@ class HomeContentState extends State<HomeContent> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Builder(
+                  SizedBox(
+                    width: 48, height: 48,
+                    child: Builder(
                     builder: (context) => IconButton(
                       icon: const Icon(
                         Icons.menu,
-                        color: Color(0xFF00796B),
+                        color: Color(0xFF142F52),
                         size: 30,
                       ),
-                      onPressed: () =>
-                          Scaffold.of(context).openDrawer(),
+                      onPressed: () => Scaffold.of(context).openDrawer(),
                     ),
-                  ),
+                  )),
 
                   GestureDetector(
                     onTap: _toggleBalance,
@@ -657,7 +716,7 @@ class HomeContentState extends State<HomeContent> {
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                               color: _isBalanceVisible
-                                  ? const Color(0xFF00796B)
+                                  ? const Color(0xFF142F52)
                                   : Colors.black54,
                             ),
                           ),
@@ -677,20 +736,25 @@ class HomeContentState extends State<HomeContent> {
                     ),
                   ),
 
-                  IconButton(
-                    icon: const Icon(
-                      Icons.person,
-                      color: Color(0xFF00796B),
-                      size: 30,
+                  SizedBox(
+                    width: 48, height: 48,
+                    child: IconButton(
+                      tooltip: 'Smart Search',
+                      icon: const Icon(Icons.search_rounded, color: Color(0xFF142F52), size: 28),
+                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SmartSearchScreen())),
                     ),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (c) => const MoreScreen(),
-                        ),
-                      );
-                    },
+                  ),
+                  SizedBox(
+                    width: 48, height: 48,
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (c) => const MoreScreen())); await _refreshOwnProfilePhoto(); },
+                      child: CircleAvatar(
+                        radius: 20, backgroundColor: const Color(0xFF142F52),
+                        backgroundImage: _profilePicUrl.isNotEmpty ? NetworkImage(_profilePicUrl) : null,
+                        child: _profilePicUrl.isEmpty ? const Icon(Icons.person, color: Colors.white, size: 23) : null,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -1026,12 +1090,10 @@ class HomeContentState extends State<HomeContent> {
                   ),
 
                   InkWell(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (c) => InstallmentProductScreen(userRole: userRole),
-                      ),
-                    ),
+                    onTap: () async {
+                      await Navigator.push(context, MaterialPageRoute(builder: (c) => InstallmentProductScreen(userRole: userRole)));
+                      if (mounted) fetchDashboardData(forceRefresh: true);
+                    },
                     child: _buildModuleIcon(
                       Icons.account_balance_wallet,
                       "কিস্তিতে পণ্য",
@@ -1040,11 +1102,12 @@ class HomeContentState extends State<HomeContent> {
                     ),
                   ),
 
-                  _buildModuleIcon(
-                    Icons.menu_book,
-                    "খতিয়ান",
-                    Colors.orangeAccent,
-                    isDark,
+                  InkWell(
+                    onTap: () async {
+                      await Navigator.push(context, MaterialPageRoute(builder: (_) => const LossProjectScreen()));
+                      if (mounted) fetchDashboardData(forceRefresh: true);
+                    },
+                    child: _buildModuleIcon(Icons.trending_down, 'লস প্রজেক্ট', Colors.redAccent, isDark),
                   ),
 
                   InkWell(
@@ -1241,7 +1304,7 @@ class HomeContentState extends State<HomeContent> {
                   _buildSmsIcon(
                     Icons.history,
                     "SMS ইতিহাস",
-                    Colors.teal,
+                    const Color(0xFF142F52),
                   ),
                 ],
               ),
@@ -1292,7 +1355,7 @@ class HomeContentState extends State<HomeContent> {
                           children: [
                             Icon(
                               Icons.show_chart,
-                              color: Color(0xFF00796B),
+                              color: Color(0xFF142F52),
                             ),
                             SizedBox(width: 10),
                             Text(
@@ -1313,7 +1376,7 @@ class HomeContentState extends State<HomeContent> {
                                 vertical: 5,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF00796B),
+                                color: const Color(0xFF142F52),
                                 borderRadius:
                                     BorderRadius.circular(20),
                               ),
@@ -1340,7 +1403,7 @@ class HomeContentState extends State<HomeContent> {
                               child: const Text(
                                 "৩০ দিন",
                                 style: TextStyle(
-                                  color: Color(0xFF00796B),
+                                  color: Color(0xFF142F52),
                                   fontSize: 12,
                                 ),
                               ),
@@ -1380,7 +1443,7 @@ class HomeContentState extends State<HomeContent> {
                               fontWeight: FontWeight.bold,
                               color: isDark
                                   ? Colors.greenAccent
-                                  : const Color(0xFF00796B),
+                                  : const Color(0xFF142F52),
                             ),
                           ),
                         ],
@@ -1419,7 +1482,7 @@ class HomeContentState extends State<HomeContent> {
                       Icons.settings,
                       "অ্যাপ সেটিংস",
                       "শব্দ ও কম্পন",
-                      Colors.teal,
+                      const Color(0xFF142F52),
                       isDark,
                       () {
                         Navigator.push(
@@ -1527,7 +1590,7 @@ class HomeContentState extends State<HomeContent> {
                   children: [
                     const Icon(
                       Icons.translate,
-                      color: Color(0xFF00796B),
+                      color: Color(0xFF142F52),
                     ),
                     const SizedBox(width: 15),
                     const Expanded(
@@ -1539,44 +1602,21 @@ class HomeContentState extends State<HomeContent> {
                         ),
                       ),
                     ),
-                    ToggleButtons(
-                      borderRadius: BorderRadius.circular(20),
-                      isSelected: [
-                        isBengali,
-                        !isBengali,
-                      ],
-                      onPressed: (index) {
-                        setState(() {
-                          isBengali = index == 0;
-                        });
-
-                        ScaffoldMessenger.of(context)
-                            .showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              isBengali
-                                  ? "ভাষা পরিবর্তন করা হচ্ছে..."
-                                  : "Changing language...",
-                            ),
-                            duration:
-                                const Duration(seconds: 1),
-                          ),
-                        );
-                      },
-                      children: const [
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 15,
-                          ),
-                          child: Text("বাংলা"),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 15,
-                          ),
-                          child: Text("English"),
-                        ),
-                      ],
+                    ValueListenableBuilder<Locale>(
+                      valueListenable: localeNotifier,
+                      builder: (context, locale, _) => SegmentedButton<String>(
+                        segments: const [
+                          ButtonSegment(value: 'bn', label: Text('বাংলা')),
+                          ButtonSegment(value: 'en', label: Text('English')),
+                        ],
+                        selected: {locale.languageCode},
+                        onSelectionChanged: (values) async {
+                          final value = values.first;
+                          localeNotifier.value = Locale(value);
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.setString('app_language', value);
+                        },
+                      ),
                     ),
                   ],
                 ),

@@ -44,7 +44,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
       backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F7FA),
       appBar: AppBar(
         title: const Text("সব লেনদেনের হিস্ট্রি"), 
-        backgroundColor: const Color(0xFF00796B), 
+        backgroundColor: const Color(0xFF142F52), 
         foregroundColor: Colors.white,
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchData)

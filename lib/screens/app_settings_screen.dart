@@ -79,25 +79,6 @@ class _AppSettingsScreenState extends State<AppSettingsScreen> {
             ),
           ])),
           const SizedBox(height: 18),
-          _sectionTitle(l.languageRegion),
-          Card(child: ListTile(
-            leading: _leadingIcon(Icons.translate),
-            title: Text(l.language),
-            subtitle: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: localeNotifier.value.languageCode,
-                isExpanded: true,
-                items: [DropdownMenuItem(value: 'bn', child: Text(l.bengali)), DropdownMenuItem(value: 'en', child: Text(l.english))],
-                onChanged: (value) async {
-                  if (value == null) return;
-                  localeNotifier.value = Locale(value);
-                  final prefs = await SharedPreferences.getInstance();
-                  await prefs.setString('app_language', value);
-                },
-              ),
-            ),
-          )),
-          const SizedBox(height: 18),
           _sectionTitle(l.appInformation),
           Card(child: ListTile(
             leading: _leadingIcon(Icons.info_outline),

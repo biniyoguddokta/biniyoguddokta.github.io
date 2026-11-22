@@ -94,7 +94,7 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
             child: const Text("বাতিল")
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00796B)),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF142F52)),
             onPressed: () async {
               if (profitController.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("লাভের পরিমাণ দিন!"), backgroundColor: Colors.red));
@@ -138,7 +138,7 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(title: const Text("আমার বিনিয়োগ"), backgroundColor: const Color(0xFF00796B), foregroundColor: Colors.white),
+      appBar: AppBar(title: const Text("আমার বিনিয়োগ"), backgroundColor: const Color(0xFF142F52), foregroundColor: Colors.white),
       body: Column(
         children: [
           Container(
@@ -197,7 +197,7 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
                                   const SizedBox(height: 5),
                                   Text(inv['Sector'].toString(), style: const TextStyle(color: Colors.grey, fontSize: 12)),
                                   const SizedBox(height: 10),
-                                  Text("৳ ${inv['InvestAmount']}", style: const TextStyle(color: Color(0xFF00796B), fontWeight: FontWeight.bold, fontSize: 18)),
+                                  Text("৳ ${inv['InvestAmount']}", style: const TextStyle(color: Color(0xFF142F52), fontWeight: FontWeight.bold, fontSize: 18)),
                                   const Divider(),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -237,7 +237,7 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
       ),
       floatingActionButton: widget.userRole == 'Admin' 
         ? FloatingActionButton(
-            backgroundColor: const Color(0xFF00796B),
+            backgroundColor: const Color(0xFF142F52),
             onPressed: () async {
               await Navigator.push(context, MaterialPageRoute(builder: (c) => const AddInvestmentScreen()));
               _fetchData();
@@ -270,7 +270,7 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
             const Icon(Icons.shopping_bag_outlined, color: Color(0xFF142F52)),
             const SizedBox(width: 8),
             Expanded(child: Text((contract['ProductName'] ?? 'কিস্তির পণ্য').toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15))),
-            Text((contract['Status'] ?? 'চলমান').toString(), style: const TextStyle(color: Color(0xFF00796B), fontSize: 12)),
+            Text((contract['Status'] ?? 'চলমান').toString(), style: const TextStyle(color: Color(0xFF142F52), fontSize: 12)),
           ]),
           const SizedBox(height: 7),
           Text('ক্রেতা: ${(contract['MemberName'] ?? '').toString()}'),
@@ -288,7 +288,7 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
         onTap: () => setState(() => selectedTab = title),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(color: isSelected ? const Color(0xFF00796B) : Colors.transparent, borderRadius: BorderRadius.circular(15)),
+          decoration: BoxDecoration(color: isSelected ? const Color(0xFF142F52) : Colors.transparent, borderRadius: BorderRadius.circular(15)),
           child: Center(child: Text(title, style: TextStyle(color: isSelected ? Colors.white : Colors.grey, fontWeight: FontWeight.bold))),
         ),
       ),

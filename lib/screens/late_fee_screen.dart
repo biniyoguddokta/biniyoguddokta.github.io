@@ -124,7 +124,7 @@ class _LateFeeScreenState extends State<LateFeeScreen> {
             child: const Text("বাতিল", style: TextStyle(color: Colors.grey))
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00796B)),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF142F52)),
             onPressed: () {
               Navigator.pop(context); // পপ-আপ বন্ধ করবে
               _processPayment(rowIndex); // পেমেন্ট প্রসেস করবে
@@ -160,7 +160,7 @@ class _LateFeeScreenState extends State<LateFeeScreen> {
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
         title: const Text("বিলম্ব ফী"), 
-        backgroundColor: const Color(0xFF00796B), 
+        backgroundColor: const Color(0xFF142F52), 
         foregroundColor: Colors.white,
         actions: [
           if (userRole == 'Admin')
@@ -205,7 +205,7 @@ class _LateFeeScreenState extends State<LateFeeScreen> {
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00796B)),
+                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF142F52)),
                             onPressed: _addLateFee,
                             child: const Text("যোগ করুন", style: TextStyle(color: Colors.white)),
                           ),

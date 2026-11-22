@@ -128,7 +128,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("${widget.type} করুন"), backgroundColor: const Color(0xFF00796B), foregroundColor: Colors.white),
+      appBar: AppBar(title: Text("${widget.type} করুন"), backgroundColor: const Color(0xFF142F52), foregroundColor: Colors.white),
       body: _isFetchingMembers 
         ? const Center(child: CircularProgressIndicator())
         : SingleChildScrollView(
@@ -189,7 +189,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               SizedBox(
                 width: double.infinity, height: 50,
                 child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00796B)),
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF142F52)),
                   onPressed: _isLoading ? null : _submit,
                   child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text("সেভ করুন", style: TextStyle(color: Colors.white, fontSize: 18)),
                 ),

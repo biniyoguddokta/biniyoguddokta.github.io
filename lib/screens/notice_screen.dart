@@ -6,7 +6,7 @@ class NoticeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("নোটিশ বোর্ড"), backgroundColor: const Color(0xFF00796B), foregroundColor: Colors.white),
+      appBar: AppBar(title: const Text("নোটিশ বোর্ড"), backgroundColor: const Color(0xFF142F52), foregroundColor: Colors.white),
       body: ListView(
         padding: const EdgeInsets.all(15),
         children: [
@@ -21,7 +21,7 @@ class NoticeScreen extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF00796B),
+        backgroundColor: const Color(0xFF142F52),
         onPressed: () {
           // অ্যাডমিন নতুন নোটিশ অ্যাড করবে
         },

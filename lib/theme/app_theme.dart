@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color brand = Color(0xFF087F70);
-  static const Color brandDark = Color(0xFF075B52);
+  static const Color brand = Color(0xFF142F52);
+  static const Color brandDark = Color(0xFF0D213B);
+  static const Color gold = Color(0xFFD0A522);
 
   static ThemeData light() {
     final scheme = ColorScheme.fromSeed(
@@ -13,15 +14,15 @@ class AppTheme {
     );
     final base = ThemeData(useMaterial3: true, colorScheme: scheme);
     return base.copyWith(
-      scaffoldBackgroundColor: const Color(0xFFF4F7F8),
+      scaffoldBackgroundColor: const Color(0xFFF5F3EE),
       primaryColor: brand,
       textTheme: GoogleFonts.hindSiliguriTextTheme(base.textTheme).apply(
         bodyColor: const Color(0xFF172B2A),
         displayColor: const Color(0xFF172B2A),
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFFF4F7F8),
-        foregroundColor: Color(0xFF172B2A),
+        backgroundColor: Color(0xFF142F52),
+        foregroundColor: Colors.white,
         centerTitle: false,
         elevation: 0,
         scrolledUnderElevation: 1,
@@ -33,7 +34,7 @@ class AppTheme {
         margin: const EdgeInsets.symmetric(vertical: 6),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
-          side: const BorderSide(color: Color(0xFFE6ECEB)),
+          side: const BorderSide(color: Color(0xFFE8E3D8)),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -93,8 +94,8 @@ class AppTheme {
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF354844))),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF4DB6A7), width: 1.6)),
       ),
-      elevatedButtonTheme: ElevatedButtonThemeData(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF087F70), foregroundColor: Colors.white, minimumSize: const Size(48, 48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)))),
-      filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(backgroundColor: const Color(0xFF087F70), foregroundColor: Colors.white, minimumSize: const Size(48, 48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)))),
+      elevatedButtonTheme: ElevatedButtonThemeData(style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF142F52), foregroundColor: Colors.white, minimumSize: const Size(48, 48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)))),
+      filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(backgroundColor: const Color(0xFF142F52), foregroundColor: Colors.white, minimumSize: const Size(48, 48), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)))),
       snackBarTheme: SnackBarThemeData(behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
     );
   }

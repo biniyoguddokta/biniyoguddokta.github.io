@@ -17,7 +17,7 @@ class BackupInspection {
 class BackupService {
   static const int schemaVersion = 1;
   static const List<String> _localPreferenceKeys = [
-    'isDarkMode', 'app_language', 'rem_dues', 'rem_meetings', 'rem_installments',
+    'isDarkMode', 'app_language', 'rem_dues', 'rem_meetings', 'rem_installments', 'loss_project_records_v1',
   ];
 
   static Future<File> createAndShareBackup() async {
@@ -39,7 +39,8 @@ class BackupService {
 
     final prefs = await SharedPreferences.getInstance();
     final local = <String, dynamic>{};
-    for (final key in _localPreferenceKeys) {
+    final localKeys = <String>{..._localPreferenceKeys, ...prefs.getKeys().where((key) => key.startsWith('social_whatsapp_') || key.startsWith('social_messenger_'))};
+    for (final key in localKeys) {
       if (prefs.containsKey(key)) local[key] = prefs.get(key);
     }
     final reminders = (await ReminderService.instance.getAll()).map((e) => e.toJson()).toList();
@@ -112,7 +113,8 @@ class BackupService {
     final prefs = await SharedPreferences.getInstance();
     final settings = local['preferences'];
     if (settings is Map) {
-      for (final key in _localPreferenceKeys) {
+      final restoreKeys = <String>{..._localPreferenceKeys, ...settings.keys.where((key) => key.toString().startsWith('social_whatsapp_') || key.toString().startsWith('social_messenger_')).map((key) => key.toString())};
+      for (final key in restoreKeys) {
         if (!settings.containsKey(key)) continue;
         final value = settings[key];
         if (value is bool) await prefs.setBool(key, value);

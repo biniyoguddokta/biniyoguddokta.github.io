@@ -134,7 +134,7 @@ class _MoreScreenState extends State<MoreScreen> {
 
       var res = await ApiService.updateProfilePic(phone: phone, base64: base64Data);
       
-      if (res['status'] == "success" || res['message'] == "Updated" || res['message'].contains("302")) {
+      if (res['status'] == "success" || res['message'] == "Updated" || (res['message'] ?? '').toString().contains("302")) {
         var members = await ApiService.getAllMembers();
         if (members is List) {
           String cleanPhone = phone.startsWith('0') ? phone.substring(1) : phone;
@@ -146,7 +146,8 @@ class _MoreScreenState extends State<MoreScreen> {
 
           if (myData != null && myData['ProfilePicUrl'] != null) {
             SharedPreferences prefs = await SharedPreferences.getInstance();
-            String newPicUrl = "${myData['ProfilePicUrl']}&t=${DateTime.now().millisecondsSinceEpoch}";
+            final rawUrl = myData['ProfilePicUrl'].toString();
+            String newPicUrl = rawUrl.contains('?') ? "$rawUrl&t=${DateTime.now().millisecondsSinceEpoch}" : "$rawUrl?t=${DateTime.now().millisecondsSinceEpoch}";
             await prefs.setString('userPic', newPicUrl);
             setState(() => profilePicUrl = newPicUrl);
           }
@@ -357,7 +358,7 @@ class _MoreScreenState extends State<MoreScreen> {
           children: [
             Container(
               padding: const EdgeInsets.fromLTRB(20, 50, 20, 30),
-              decoration: const BoxDecoration(color: Color(0xFF00796B), borderRadius: BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20))),
+              decoration: const BoxDecoration(color: Color(0xFF142F52), borderRadius: BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20))),
               child: Row(
                 children: [
                   GestureDetector(
@@ -380,10 +381,10 @@ class _MoreScreenState extends State<MoreScreen> {
                                     return const Center(child: CircularProgressIndicator(strokeWidth: 2));
                                   },
                                   errorBuilder: (context, error, stackTrace) {
-                                    return const Icon(Icons.person, size: 40, color: Color(0xFF00796B));
+                                    return const Icon(Icons.person, size: 40, color: Color(0xFF142F52));
                                   },
                                 )
-                              : const Icon(Icons.person, size: 40, color: Color(0xFF00796B)),
+                              : const Icon(Icons.person, size: 40, color: Color(0xFF142F52)),
                           ),
                         ),
                         Positioned(
@@ -425,7 +426,7 @@ class _MoreScreenState extends State<MoreScreen> {
                   children: [
                     Container(
                       width: double.infinity, padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(color: const Color(0xFF00796B), borderRadius: BorderRadius.circular(15)),
+                      decoration: BoxDecoration(color: const Color(0xFF142F52), borderRadius: BorderRadius.circular(15)),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -455,7 +456,7 @@ class _MoreScreenState extends State<MoreScreen> {
                         Expanded(
                           child: GestureDetector(
                             onTap: () => _showHistoryDialog("আমার জমার হিস্ট্রি", myTransactions.where((tx) => tx['Type'] == 'জমা' || tx['Type'] == 'বিলম্ব ফী').toList(), false),
-                            child: _buildStatCard("মোট জমা", "৳ ${totalDeposit.toStringAsFixed(0)}", Icons.account_balance_wallet, Colors.teal, isDark)
+                            child: _buildStatCard("মোট জমা", "৳ ${totalDeposit.toStringAsFixed(0)}", Icons.account_balance_wallet, const Color(0xFF142F52), isDark)
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -478,7 +479,7 @@ class _MoreScreenState extends State<MoreScreen> {
               secondary: const Icon(Icons.dark_mode, color: Colors.blueGrey),
               title: const Text("ডার্ক মোড", style: TextStyle(fontWeight: FontWeight.w500)),
               value: themeNotifier.value == ThemeMode.dark,
-              activeColor: const Color(0xFF00796B),
+              activeColor: const Color(0xFF142F52),
               onChanged: (val) async {
                 themeNotifier.value = val ? ThemeMode.dark : ThemeMode.light;
                 SharedPreferences prefs = await SharedPreferences.getInstance();

@@ -1,4 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
 
 class MemberProfileScreen extends StatefulWidget {
@@ -14,12 +19,76 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
   List<Map<String, dynamic>> transactions = [];
   List<Map<String, dynamic>> investments = [];
   double deposits = 0, dues = 0, income = 0, expenses = 0;
+  bool _uploadingPhoto = false;
+  bool _canEditPhoto = false;
+  bool _canEditSocial = false;
+  String _whatsappLink = '';
+  String _messengerLink = '';
+  String get _photoUrl => (widget.member['ProfilePicUrl'] ?? '').toString();
   String get memberName => (widget.member['Name'] ?? '').toString().trim();
   String get memberPhone => (widget.member['Phone'] ?? '').toString().trim();
   double _amount(dynamic v) => double.tryParse((v ?? '0').toString().replaceAll(',', '')) ?? 0;
 
   @override
-  void initState() { super.initState(); _load(); }
+  void initState() { super.initState(); _loadPhotoPermission(); _loadSocialLinks(); _load(); }
+
+  String get _socialKey => memberPhone.replaceAll(RegExp(r'\D'), '').replaceFirst(RegExp(r'^880'), '').replaceFirst(RegExp(r'^0'), '');
+
+  Future<void> _loadSocialLinks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final currentPhone = (prefs.getString('userPhone') ?? '').replaceAll(RegExp(r'\D'), '').replaceFirst(RegExp(r'^880'), '').replaceFirst(RegExp(r'^0'), '');
+    final isAdmin = (prefs.getString('userRole') ?? '').toLowerCase() == 'admin';
+    if (!mounted) return;
+    setState(() { _canEditSocial = isAdmin || (currentPhone.isNotEmpty && currentPhone == _socialKey); _whatsappLink = prefs.getString('social_whatsapp_$_socialKey') ?? ''; _messengerLink = prefs.getString('social_messenger_$_socialKey') ?? ''; });
+  }
+
+  Future<void> _editSocialLinks() async {
+    final wa = TextEditingController(text: _whatsappLink);
+    final ms = TextEditingController(text: _messengerLink);
+    final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(title: const Text('যোগাযোগের লিংক'), content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [TextField(controller: wa, keyboardType: TextInputType.url, decoration: const InputDecoration(labelText: 'WhatsApp নম্বর / লিংক', hintText: '8801XXXXXXXXX বা https://wa.me/...')), const SizedBox(height: 10), TextField(controller: ms, keyboardType: TextInputType.url, decoration: const InputDecoration(labelText: 'Facebook Messenger লিংক / ID', hintText: 'https://m.me/username'))])), actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('বাতিল')), FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('সংরক্ষণ'))]));
+    if (ok == true) { final prefs = await SharedPreferences.getInstance(); await prefs.setString('social_whatsapp_$_socialKey', wa.text.trim()); await prefs.setString('social_messenger_$_socialKey', ms.text.trim()); if (mounted) setState(() { _whatsappLink = wa.text.trim(); _messengerLink = ms.text.trim(); }); }
+    wa.dispose(); ms.dispose();
+  }
+
+  Future<void> _openSocial(String raw, {required bool whatsapp}) async {
+    var value = raw.trim();
+    if (value.isEmpty) return;
+    if (whatsapp && !value.startsWith('http')) { var digits = value.replaceAll(RegExp(r'\D'), ''); if (digits.startsWith('0')) digits = '88$digits'; value = 'https://wa.me/$digits'; }
+    if (!whatsapp && !value.startsWith('http')) value = 'https://m.me/${value.replaceAll('@', '')}';
+    final uri = Uri.tryParse(value);
+    if (uri == null || !await launchUrl(uri, mode: LaunchMode.externalApplication)) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('লিংকটি খোলা যায়নি'))); }
+  }
+
+  Future<void> _loadPhotoPermission() async {
+    final prefs = await SharedPreferences.getInstance();
+    final currentPhone = (prefs.getString('userPhone') ?? '').replaceAll(RegExp(r'\D'), '').replaceFirst(RegExp(r'^880'), '').replaceFirst(RegExp(r'^0'), '');
+    final targetPhone = memberPhone.replaceAll(RegExp(r'\D'), '').replaceFirst(RegExp(r'^880'), '').replaceFirst(RegExp(r'^0'), '');
+    final isAdmin = (prefs.getString('userRole') ?? '').toLowerCase() == 'admin';
+    if (mounted) setState(() => _canEditPhoto = isAdmin || (currentPhone.isNotEmpty && currentPhone == targetPhone));
+  }
+
+  Future<void> _changeMemberPhoto() async {
+    final image = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 82, maxWidth: 1000, maxHeight: 1000);
+    if (image == null) return;
+    setState(() => _uploadingPhoto = true);
+    try {
+      final bytes = await File(image.path).readAsBytes();
+      final data = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+      final result = await ApiService.updateProfilePic(phone: memberPhone, base64: data);
+      final message = (result['message'] ?? '').toString();
+      if (result['status'] == 'success' || message == 'Updated' || message.contains('302')) {
+        final members = await ApiService.getAllMembers();
+        if (members is List) {
+          String clean(String v) => v.replaceAll(RegExp(r'\D'), '').replaceFirst(RegExp(r'^880'), '').replaceFirst(RegExp(r'^0'), '');
+          final match = members.whereType<Map>().firstWhere((m) => clean('${m['Phone'] ?? ''}') == clean(memberPhone), orElse: () => <String,dynamic>{});
+          final url = (match['ProfilePicUrl'] ?? '').toString();
+          if (url.isNotEmpty) widget.member['ProfilePicUrl'] = '$url?t=${DateTime.now().millisecondsSinceEpoch}';
+        }
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('সদস্যের প্রোফাইল ছবি আপডেট হয়েছে')));
+      } else { throw Exception(message.isEmpty ? 'সার্ভার ছবি গ্রহণ করেনি' : message); }
+    } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('ছবি আপলোড হয়নি: $e'))); }
+    finally { if (mounted) setState(() => _uploadingPhoto = false); }
+  }
 
   Future<void> _load() async {
     if (mounted) setState(() { loading = true; error = null; });
@@ -58,9 +127,11 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
   Widget build(BuildContext context) {
     final name = memberName.isEmpty ? 'নাম পাওয়া যায়নি' : memberName;
     final role = (widget.member['Designation'] ?? (widget.member['Role'] == 'Admin' ? 'প্রতিষ্ঠাতা / অ্যাডমিন' : 'সদস্য')).toString();
-    return Scaffold(backgroundColor: const Color(0xFFF4F7F8), appBar: AppBar(title: const Text('Member 360°'), backgroundColor: const Color(0xFF00796B), foregroundColor: Colors.white, actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))]),
+    return Scaffold(backgroundColor: const Color(0xFFF5F3EE), appBar: AppBar(title: const Text('Member 360°'), backgroundColor: const Color(0xFF142F52), foregroundColor: Colors.white, actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))]),
       body: loading ? const Center(child: CircularProgressIndicator()) : error != null ? _errorView() : RefreshIndicator(onRefresh: _load, child: ListView(padding: const EdgeInsets.all(16), children: [
-        Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)), child: Row(children: [CircleAvatar(radius: 32, backgroundColor: const Color(0xFF00796B), child: Text(name.isEmpty ? '?' : name.substring(0, 1), style: const TextStyle(color: Colors.white, fontSize: 24))), const SizedBox(width: 14), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(height: 4), Text(memberPhone), Text(role, style: const TextStyle(color: Color(0xFF00796B), fontWeight: FontWeight.w600))]))])),
+        Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)), child: Row(children: [Stack(children: [CircleAvatar(radius: 34, backgroundColor: const Color(0xFF142F52), backgroundImage: _photoUrl.isNotEmpty ? NetworkImage(_photoUrl) : null, child: _photoUrl.isEmpty ? Text(name.isEmpty ? '?' : name.substring(0, 1), style: const TextStyle(color: Colors.white, fontSize: 24)) : null), if (_canEditPhoto) Positioned(right: -2, bottom: -2, child: Material(color: const Color(0xFFD0A522), shape: const CircleBorder(), child: InkWell(customBorder: const CircleBorder(), onTap: _uploadingPhoto ? null : _changeMemberPhoto, child: Padding(padding: const EdgeInsets.all(5), child: _uploadingPhoto ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.camera_alt, color: Colors.white, size: 15)))))]), const SizedBox(width: 14), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)), const SizedBox(height: 4), Text(memberPhone), Text(role, style: const TextStyle(color: Color(0xFF142F52), fontWeight: FontWeight.w600))]))])),
+        const SizedBox(height: 14),
+        Container(padding: const EdgeInsets.all(15), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [const Expanded(child: Text('সামাজিক যোগাযোগ', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF142F52), fontSize: 16))), if (_canEditSocial) IconButton(tooltip: 'লিংক সম্পাদনা', onPressed: _editSocialLinks, icon: const Icon(Icons.edit, color: Color(0xFF142F52)))]), Wrap(spacing: 9, runSpacing: 8, children: [if (_whatsappLink.isNotEmpty) OutlinedButton.icon(onPressed: () => _openSocial(_whatsappLink, whatsapp: true), icon: const Icon(Icons.chat, color: Color(0xFF25D366)), label: const Text('WhatsApp')), if (_messengerLink.isNotEmpty) OutlinedButton.icon(onPressed: () => _openSocial(_messengerLink, whatsapp: false), icon: const Icon(Icons.facebook, color: Color(0xFF1877F2)), label: const Text('Messenger')), if (_whatsappLink.isEmpty && _messengerLink.isEmpty) const Text('এখনো যোগাযোগের লিংক যোগ করা হয়নি', style: TextStyle(color: Colors.black54, fontSize: 12)), if (_canEditSocial && _whatsappLink.isEmpty && _messengerLink.isEmpty) TextButton.icon(onPressed: _editSocialLinks, icon: const Icon(Icons.add), label: const Text('লিংক যোগ করুন'))])])),
         const SizedBox(height: 14),
         GridView.count(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 1.75, children: [
           _stat('মোট জমা', deposits, Colors.green, Icons.south_west), _stat('বকেয়া', dues, Colors.red, Icons.pending_actions), _stat('আয়', income, Colors.blue, Icons.trending_up), _stat('ব্যয়', expenses, Colors.deepOrange, Icons.trending_down),
@@ -69,7 +140,7 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
         const SizedBox(height: 16), _sectionTitle('সাম্প্রতিক লেনদেন (${transactions.length})'),
         if (transactions.isEmpty) const _Empty(text: 'এই সদস্যের নামে কোনো লেনদেন পাওয়া যায়নি') else ...transactions.take(50).map(_transaction),
         const SizedBox(height: 16), _sectionTitle('বিনিয়োগ প্রকল্প (${investments.length})'),
-        if (investments.isEmpty) const _Empty(text: 'বিনিয়োগের তথ্য পাওয়া যায়নি') else ...investments.take(30).map((v) => Card(child: ListTile(leading: const Icon(Icons.business_center, color: Color(0xFF00796B)), title: Text((v['ProjectName'] ?? v['projectName'] ?? 'প্রকল্প').toString()), subtitle: Text('অবস্থা: ${(v['Status'] ?? '—')}'), trailing: Text('৳ ${_amount(v['InvestAmount']).toStringAsFixed(0)}')))),
+        if (investments.isEmpty) const _Empty(text: 'বিনিয়োগের তথ্য পাওয়া যায়নি') else ...investments.take(30).map((v) => Card(child: ListTile(leading: const Icon(Icons.business_center, color: Color(0xFF142F52)), title: Text((v['ProjectName'] ?? v['projectName'] ?? 'প্রকল্প').toString()), subtitle: Text('অবস্থা: ${(v['Status'] ?? '—')}'), trailing: Text('৳ ${_amount(v['InvestAmount']).toStringAsFixed(0)}')))),
         const SizedBox(height: 10), const Text('নোট: লেনদেনের সদস্য-ফোন API-তে না থাকলে নামের মিলের ভিত্তিতে তথ্য দেখানো হয়। প্রকল্পের তথ্য বর্তমানে সমিতির সামগ্রিক বিনিয়োগ তালিকা থেকে আসে।', style: TextStyle(fontSize: 12, color: Colors.grey)),
       ])));
   }

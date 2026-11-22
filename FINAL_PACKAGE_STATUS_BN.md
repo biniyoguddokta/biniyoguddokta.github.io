@@ -50,3 +50,10 @@
 - Digital Receipt PDF: device-local create/save/preview/print/share implemented. Server verification remains pending.
 - Pledge PDF: local create/save/preview/print/share implemented. Signature authentication and server sync remain pending.
 - Saved PDF document archive: local list/open/share/print/delete implemented.
+
+
+## 2026-11-22 Update
+- WhatsApp / Messenger profile links: UI and per-phone local persistence implemented; cross-device sync requires backend API support.
+- Loss Project: UI, local record storage, evidence attachments, recovery fields and Admin permissions implemented.
+- Total Assets formula updated: existing assets + installment expected net profit - local net loss.
+- Flutter analyze / APK build must be verified in GitHub Actions because Flutter SDK is unavailable in the package-editing environment.

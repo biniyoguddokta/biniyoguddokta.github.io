@@ -9,7 +9,7 @@ class ReportScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(title: const Text("রিপোর্ট ও বিশ্লেষণ"), backgroundColor: const Color(0xFF00796B), foregroundColor: Colors.white),
+      appBar: AppBar(title: const Text("রিপোর্ট ও বিশ্লেষণ"), backgroundColor: const Color(0xFF142F52), foregroundColor: Colors.white),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(15),
         child: Column(
@@ -19,7 +19,7 @@ class ReportScreen extends StatelessWidget {
               decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15)),
               child: Row(
                 children: [
-                  Expanded(child: Container(padding: const EdgeInsets.symmetric(vertical: 10), decoration: BoxDecoration(color: const Color(0xFF00796B), borderRadius: BorderRadius.circular(15)), child: const Center(child: Text("মাসিক", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))))),
+                  Expanded(child: Container(padding: const EdgeInsets.symmetric(vertical: 10), decoration: BoxDecoration(color: const Color(0xFF142F52), borderRadius: BorderRadius.circular(15)), child: const Center(child: Text("মাসিক", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))))),
                   const Expanded(child: Center(child: Text("ত্রৈমাসিক", style: TextStyle(color: Colors.grey)))),
                   const Expanded(child: Center(child: Text("বার্ষিক", style: TextStyle(color: Colors.grey)))),
                 ],
@@ -89,7 +89,7 @@ class ReportScreen extends StatelessWidget {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00796B)),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF142F52)),
                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdvancedReportsScreen())),
                 child: const Text("বিস্তারিত রিপোর্ট দেখুন", style: TextStyle(color: Colors.white, fontSize: 16)),
               ),

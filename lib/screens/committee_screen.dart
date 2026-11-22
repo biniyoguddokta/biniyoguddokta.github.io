@@ -59,7 +59,7 @@ class _CommitteeScreenState extends State<CommitteeScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F7FA),
-      appBar: AppBar(title: const Text("কমিটি ও দায়িত্ব"), backgroundColor: const Color(0xFF00796B), foregroundColor: Colors.white),
+      appBar: AppBar(title: const Text("কমিটি ও দায়িত্ব"), backgroundColor: const Color(0xFF142F52), foregroundColor: Colors.white),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(

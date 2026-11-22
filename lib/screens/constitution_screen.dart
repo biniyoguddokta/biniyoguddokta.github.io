@@ -57,7 +57,7 @@ class _ConstitutionScreenState extends State<ConstitutionScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("বাতিল")),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00796B)),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF142F52)),
             onPressed: () async {
               if (titleController.text.isNotEmpty) {
                 setState(() => isLoading = true);
@@ -77,7 +77,7 @@ class _ConstitutionScreenState extends State<ConstitutionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(title: const Text("গঠনতন্ত্র"), backgroundColor: const Color(0xFF00796B), foregroundColor: Colors.white),
+      appBar: AppBar(title: const Text("গঠনতন্ত্র"), backgroundColor: const Color(0xFF142F52), foregroundColor: Colors.white),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : pages.isEmpty
@@ -94,8 +94,8 @@ class _ConstitutionScreenState extends State<ConstitutionScreen> {
                       child: ExpansionTile(
                         leading: Container(
                           padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(color: Colors.teal.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                          child: const Icon(Icons.menu_book, color: Color(0xFF00796B)),
+                          decoration: BoxDecoration(color: const Color(0xFF142F52).withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                          child: const Icon(Icons.menu_book, color: Color(0xFF142F52)),
                         ),
                         title: Text(page['Title'].toString(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         children: [
@@ -110,7 +110,7 @@ class _ConstitutionScreenState extends State<ConstitutionScreen> {
                 ),
       floatingActionButton: userRole == 'Admin' 
         ? FloatingActionButton(
-            backgroundColor: const Color(0xFF00796B),
+            backgroundColor: const Color(0xFF142F52),
             onPressed: _showAddDialog,
             child: const Icon(Icons.add, color: Colors.white),
           )

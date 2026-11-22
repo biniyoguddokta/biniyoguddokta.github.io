@@ -67,7 +67,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("নতুন সদস্য যোগ করুন"),
-        backgroundColor: const Color(0xFF00796B),
+        backgroundColor: const Color(0xFF142F52),
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -123,7 +123,7 @@ class _AddMemberScreenState extends State<AddMemberScreen> {
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF00796B), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF142F52), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
                 onPressed: _isLoading ? null : _submitData,
                 child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text("সেভ করুন", style: TextStyle(fontSize: 18, color: Colors.white)),
               ),

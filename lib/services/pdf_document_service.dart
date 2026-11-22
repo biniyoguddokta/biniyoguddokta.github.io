@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
@@ -20,7 +21,7 @@ class PdfDocumentService {
   static Future<pw.Font> _font() async => pw.Font.ttf(await rootBundle.load('assets/fonts/NotoSansBengali-Regular.ttf'));
   static String _safe(String value)=>value.replaceAll(RegExp(r'[^\w\-]+'), '_').replaceAll(RegExp(r'_+'),'_');
 
-  static Future<SavedDocument> create({required String type, required String title, required List<List<String>> rows, String? note}) async {
+  static Future<SavedDocument> create({required String type, required String title, required List<List<String>> rows, String? note, List<int>? attachmentImageBytes, String? attachmentLabel}) async {
     final font=await _font();
     final doc=pw.Document(theme:pw.ThemeData.withFont(base:font,bold:font));
     doc.addPage(pw.MultiPage(pageFormat:PdfPageFormat.a4,margin:const pw.EdgeInsets.all(34),theme:pw.ThemeData.withFont(base:font,bold:font),build:(context)=>[
@@ -29,6 +30,7 @@ class PdfDocumentService {
       pw.SizedBox(height:18),
       pw.Table(border:pw.TableBorder.all(color:PdfColors.grey400,width:.5),columnWidths:{0:const pw.FlexColumnWidth(1),1:const pw.FlexColumnWidth(2)},children:rows.map((r)=>pw.TableRow(children:[pw.Padding(padding:const pw.EdgeInsets.all(8),child:pw.Text(r[0],style:pw.TextStyle(font:font,fontWeight:pw.FontWeight.bold))),pw.Padding(padding:const pw.EdgeInsets.all(8),child:pw.Text(r[1],style:pw.TextStyle(font:font)))] )).toList()),
       if(note!=null&&note.trim().isNotEmpty) ...[pw.SizedBox(height:16),pw.Text('বিবরণ / শর্তাবলি',style:pw.TextStyle(font:font,fontWeight:pw.FontWeight.bold)),pw.SizedBox(height:5),pw.Text(note,style:pw.TextStyle(font:font))],
+      if(attachmentImageBytes!=null&&attachmentImageBytes.isNotEmpty) ...[pw.SizedBox(height:18),pw.Text(attachmentLabel??'সংযুক্ত ছবি',style:pw.TextStyle(font:font,fontWeight:pw.FontWeight.bold)),pw.SizedBox(height:8),pw.Center(child:pw.Image(pw.MemoryImage(Uint8List.fromList(attachmentImageBytes)),width:280,height:220,fit:pw.BoxFit.contain))],
       pw.SizedBox(height:34),pw.Text('তৈরির সময়: ${DateTime.now().toLocal()}',style:pw.TextStyle(font:font,fontSize:9,color:PdfColors.grey700)),pw.SizedBox(height:34),pw.Row(mainAxisAlignment:pw.MainAxisAlignment.spaceBetween,children:[pw.Text('প্রস্তুতকারীর স্বাক্ষর: __________________',style:pw.TextStyle(font:font,fontSize:10)),pw.Text('গ্রহণকারীর স্বাক্ষর: __________________',style:pw.TextStyle(font:font,fontSize:10))]),
       pw.SizedBox(height:18),pw.Text('নোট: এটি অ্যাপ থেকে তৈরি নথি। অনুমোদন, স্বাক্ষর যাচাই বা সার্ভার রেকর্ডের প্রমাণ নয়।',style:pw.TextStyle(font:font,fontSize:8,color:PdfColors.grey700)),
     ]));

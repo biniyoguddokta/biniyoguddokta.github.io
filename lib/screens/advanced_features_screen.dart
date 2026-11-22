@@ -11,7 +11,7 @@ import '../services/reminder_service.dart';
 import '../services/backup_service.dart';
 import '../services/audit_log_service.dart';
 
-const _teal = Color(0xFF00796B);
+const _teal = Color(0xFF142F52);
 
 class AdvancedFeaturesScreen extends StatelessWidget {
   const AdvancedFeaturesScreen({super.key});
@@ -21,12 +21,10 @@ class AdvancedFeaturesScreen extends StatelessWidget {
     body: ListView(padding: const EdgeInsets.all(14), children: [
       _FeatureTile(Icons.receipt_long, 'ডিজিটাল রসিদ PDF', 'লেনদেনের রসিদ তৈরি ও প্রিন্ট', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DigitalReceiptScreen()))),
       _FeatureTile(Icons.badge_outlined, 'সদস্য 360° ও স্মার্ট সার্চ', 'সদস্য, লেনদেন ও বিনিয়োগ একসঙ্গে খুঁজুন', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SmartSearchScreen()))),
-      _FeatureTile(Icons.description_outlined, 'অঙ্গীকারনামা ও নথি', 'সদস্যভিত্তিক নথির খসড়া সংরক্ষণ', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PledgeDocumentsScreen()))),
       _FeatureTile(Icons.analytics_outlined, 'উন্নত আর্থিক রিপোর্ট', 'আয়, জমা, ব্যয় ও বকেয়ার সারাংশ', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdvancedReportsScreen()))),
       _FeatureTile(Icons.notifications_active_outlined, 'রিমাইন্ডার সেটিংস', 'রিমাইন্ডার পছন্দ সংরক্ষণ', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReminderPreferencesScreen()))),
       _FeatureTile(Icons.cloud_sync_outlined, 'Cloud Backup', 'ব্যাকআপ ফিচারের প্রস্তুতি ও অবস্থা', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupStatusScreen()))),
       _FeatureTile(Icons.history, 'অ্যাক্টিভিটি লগ', 'এই ডিভাইসে সংরক্ষিত স্থানীয় কার্যকলাপ', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LocalAuditScreen()))),
-      _FeatureTile(Icons.language, 'ভাষা নির্বাচন', 'বাংলা / English পছন্দ সংরক্ষণ', () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguagePreferenceScreen()))),
       const SizedBox(height: 10),
       const Text('নোট: Cloud Backup, সার্ভার Audit Log, Push Notification delivery এবং সম্পূর্ণ অ্যাপের অনুবাদ Backend/Integration ধাপে সংযুক্ত করতে হবে।', style: TextStyle(color: Colors.deepOrange, fontSize: 12)),
     ]),
@@ -404,10 +402,6 @@ class _DigitalReceiptScreenState extends State<DigitalReceiptScreen>{
  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('ডিজিটাল রসিদ PDF'),backgroundColor:_teal,foregroundColor:Colors.white),body:ListView(padding:const EdgeInsets.all(16),children:[TextField(controller:member,decoration:const InputDecoration(labelText:'সদস্যের নাম *')),TextField(controller:phone,keyboardType:TextInputType.phone,decoration:const InputDecoration(labelText:'মোবাইল নম্বর')),TextField(controller:amount,keyboardType:const TextInputType.numberWithOptions(decimal:true),decoration:const InputDecoration(labelText:'টাকার পরিমাণ *')),DropdownButtonFormField<String>(value:type,items:['জমা','আয়','আয়','ব্যয়','ব্যয়','বিলম্ব ফী','কিস্তি'].map((e)=>DropdownMenuItem(value:e,child:Text(e))).toList(),onChanged:(v)=>setState(()=>type=v??'জমা'),decoration:const InputDecoration(labelText:'লেনদেনের ধরন')),TextField(controller:note, minLines:2,maxLines:4,decoration:const InputDecoration(labelText:'বিবরণ')),const SizedBox(height:16),ElevatedButton.icon(onPressed:busy?null:_create,icon:busy?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2)):const Icon(Icons.picture_as_pdf),label:Text(busy?'PDF তৈরি হচ্ছে...':'PDF রসিদ তৈরি করুন')),OutlinedButton.icon(onPressed:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const SavedDocumentsScreen())),icon:const Icon(Icons.folder_open),label:const Text('সংরক্ষিত রসিদ / নথি')),const Text('রসিদটি এই ডিভাইসে PDF হিসেবে সংরক্ষিত হবে। LOCAL নম্বরটি ডিভাইস-ভিত্তিক; সার্ভার যাচাইকৃত রসিদ নম্বর নয়।',style:TextStyle(color:Colors.deepOrange,fontSize:12))]));
 }
 
-class PledgeDocumentsScreen extends StatefulWidget { const PledgeDocumentsScreen({super.key}); @override State<PledgeDocumentsScreen> createState()=>_PledgeDocumentsScreenState(); }
-class _PledgeDocumentsScreenState extends State<PledgeDocumentsScreen>{final name=TextEditingController(),phone=TextEditingController(),purpose=TextEditingController(),terms=TextEditingController();bool busy=false;Future<void> _create()async{if(name.text.trim().isEmpty||terms.text.trim().isEmpty){ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('সদস্যের নাম ও অঙ্গীকারের শর্ত লিখুন')));return;}setState(()=>busy=true);try{final d=await PdfDocumentService.create(type:'pledge',title:'অঙ্গীকারনামা',rows:[['সদস্যের নাম',name.text.trim()],['মোবাইল',phone.text.trim()],['উদ্দেশ্য',purpose.text.trim()],['তারিখ','${DateTime.now()}']],note:terms.text.trim());if(!mounted)return;ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('অঙ্গীকারনামার PDF তৈরি ও সংরক্ষণ হয়েছে')));await showModalBottomSheet(context:context,builder:(c)=>SafeArea(child:Wrap(children:[ListTile(leading:const Icon(Icons.picture_as_pdf),title:const Text('PDF প্রিভিউ / প্রিন্ট'),onTap:(){Navigator.pop(c);PdfDocumentService.preview(d);}),ListTile(leading:const Icon(Icons.share),title:const Text('PDF শেয়ার'),onTap:(){Navigator.pop(c);PdfDocumentService.share(d);})]))); }catch(e){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text('নথি তৈরি করা যায়নি: $e')));}finally{if(mounted)setState(()=>busy=false);}}
-@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('অঙ্গীকারনামা ও নথি'),backgroundColor:_teal,foregroundColor:Colors.white),body:ListView(padding:const EdgeInsets.all(16),children:[const Text('নতুন অঙ্গীকারনামা',style:TextStyle(fontWeight:FontWeight.bold,fontSize:18)),TextField(controller:name,decoration:const InputDecoration(labelText:'সদস্যের নাম *')),TextField(controller:phone,keyboardType:TextInputType.phone,decoration:const InputDecoration(labelText:'মোবাইল')),TextField(controller:purpose,decoration:const InputDecoration(labelText:'উদ্দেশ্য')),TextField(controller:terms,minLines:4,maxLines:8,decoration:const InputDecoration(labelText:'শর্তাবলি / অঙ্গীকার *')),const SizedBox(height:12),ElevatedButton.icon(onPressed:busy?null:_create,icon:const Icon(Icons.picture_as_pdf),label:Text(busy?'PDF তৈরি হচ্ছে...':'অঙ্গীকারনামা PDF তৈরি ও সংরক্ষণ')),OutlinedButton.icon(onPressed:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const SavedDocumentsScreen())),icon:const Icon(Icons.folder_open),label:const Text('সংরক্ষিত নথি দেখুন')),const Text('নথি স্থানীয়ভাবে সংরক্ষিত হবে। স্বাক্ষর, সাক্ষী যাচাই, অনুমোদন, ক্লাউড আপলোড ও সার্ভার-রেকর্ড Backend ধাপে যুক্ত হবে।',style:TextStyle(color:Colors.deepOrange,fontSize:12))]));}
-
 class SavedDocumentsScreen extends StatefulWidget{const SavedDocumentsScreen({super.key});@override State<SavedDocumentsScreen> createState()=>_SavedDocumentsScreenState();}
 class _SavedDocumentsScreenState extends State<SavedDocumentsScreen>{List<SavedDocument> docs=[];bool loading=true;Future<void> _load()async{final x=await PdfDocumentService.list();if(mounted)setState((){docs=x;loading=false;});}@override void initState(){super.initState();_load();}@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('সংরক্ষিত PDF নথি'),backgroundColor:_teal,foregroundColor:Colors.white,actions:[IconButton(onPressed:_load,icon:const Icon(Icons.refresh))]),body:loading?const Center(child:CircularProgressIndicator()):docs.isEmpty?const Center(child:Text('কোনো PDF নথি পাওয়া যায়নি')):ListView.builder(itemCount:docs.length,itemBuilder:(c,i){final d=docs[i];return Card(child:ListTile(leading:const Icon(Icons.picture_as_pdf,color:_teal),title:Text(d.title),subtitle:Text('${d.type=='receipt'?'রসিদ':'অঙ্গীকারনামা'} • ${d.createdAt}'),onTap:()=>PdfDocumentService.preview(d),trailing:PopupMenuButton<String>(onSelected:(v)async{if(v=='share')await PdfDocumentService.share(d);if(v=='print')await PdfDocumentService.printDocument(d);if(v=='delete'){await PdfDocumentService.delete(d);await _load();}},itemBuilder:(_)=>const [PopupMenuItem(value:'share',child:Text('শেয়ার')),PopupMenuItem(value:'print',child:Text('প্রিন্ট')),PopupMenuItem(value:'delete',child:Text('মুছে ফেলুন'))]))); }));}
 
@@ -722,61 +716,4 @@ class _LocalAuditScreenState extends State<LocalAuditScreen> {
       ]),
     );
   }
-}
-
-class LanguagePreferenceScreen extends StatefulWidget{const LanguagePreferenceScreen({super.key});@override State<LanguagePreferenceScreen> createState()=>_LanguagePreferenceScreenState();}
-class _LanguagePreferenceScreenState extends State<LanguagePreferenceScreen> {
-  String lang = 'বাংলা';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadLanguage();
-  }
-
-  Future<void> _loadLanguage() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (!mounted) return;
-    setState(() => lang = prefs.getString('app_language') ?? 'বাংলা');
-  }
-
-  Future<void> _save(String? value) async {
-    if (value == null) return;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('app_language', value);
-    if (!mounted) return;
-    setState(() => lang = value);
-  }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: const Text('ভাষা নির্বাচন'),
-          backgroundColor: _teal,
-          foregroundColor: Colors.white,
-        ),
-        body: Column(
-          children: [
-            RadioListTile<String>(
-              title: const Text('বাংলা'),
-              value: 'বাংলা',
-              groupValue: lang,
-              onChanged: _save,
-            ),
-            RadioListTile<String>(
-              title: const Text('English'),
-              value: 'English',
-              groupValue: lang,
-              onChanged: _save,
-            ),
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text(
-                'ভাষার পছন্দ সংরক্ষণ করা হচ্ছে। সম্পূর্ণ অ্যাপের সব স্ক্রিনে অনুবাদ প্রয়োগ করতে আলাদা localization refactor প্রয়োজন।',
-                style: TextStyle(color: Colors.deepOrange),
-              ),
-            ),
-          ],
-        ),
-      );
 }

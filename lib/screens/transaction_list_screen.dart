@@ -131,7 +131,7 @@ class _TransactionListScreenState
 
       appBar: AppBar(
         title: Text("${widget.type} এর তালিকা"),
-        backgroundColor: const Color(0xFF00796B),
+        backgroundColor: const Color(0xFF142F52),
         foregroundColor: Colors.white,
 
         actions: [
@@ -188,11 +188,11 @@ class _TransactionListScreenState
                         child: ListTile(
                           leading: CircleAvatar(
                             backgroundColor:
-                                const Color(0xFF00796B)
+                                const Color(0xFF142F52)
                                     .withOpacity(0.1),
                             child: const Icon(
                               Icons.money,
-                              color: Color(0xFF00796B),
+                              color: Color(0xFF142F52),
                             ),
                           ),
 
@@ -214,7 +214,7 @@ class _TransactionListScreenState
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
-                              color: Color(0xFF00796B),
+                              color: Color(0xFF142F52),
                             ),
                           ),
                         ),
@@ -227,7 +227,7 @@ class _TransactionListScreenState
       floatingActionButton: isAdmin
           ? FloatingActionButton(
               backgroundColor:
-                  const Color(0xFF00796B),
+                  const Color(0xFF142F52),
               onPressed: _addTransaction,
               tooltip: "নতুন হিসাব যোগ করুন",
               child: const Icon(
