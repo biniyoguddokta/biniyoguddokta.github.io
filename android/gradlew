@@ -1,12 +1,16 @@
+
 #!/usr/bin/env sh
 # Pinned Gradle launcher. Keep this version aligned with gradle-wrapper.properties.
 set -eu
-GRADLE_VERSION=8.11.1
+
+GRADLE_VERSION=8.14
 GRADLE_USER_HOME=${GRADLE_USER_HOME:-$HOME/.gradle}
 GRADLE_HOME="$GRADLE_USER_HOME/wrapper/manual/gradle-$GRADLE_VERSION"
+
 if [ ! -x "$GRADLE_HOME/bin/gradle" ]; then
   mkdir -p "$GRADLE_USER_HOME/wrapper/manual"
   ZIP="$GRADLE_USER_HOME/wrapper/manual/gradle-$GRADLE_VERSION-bin.zip"
+
   if [ ! -f "$ZIP" ]; then
     if command -v curl >/dev/null 2>&1; then
       curl -fL "https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip" -o "$ZIP"
@@ -15,6 +19,8 @@ if [ ! -x "$GRADLE_HOME/bin/gradle" ]; then
       exit 1
     fi
   fi
+
   unzip -q -o "$ZIP" -d "$GRADLE_USER_HOME/wrapper/manual"
 fi
+
 exec "$GRADLE_HOME/bin/gradle" "$@"
