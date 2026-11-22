@@ -16,7 +16,7 @@ dependencies:
   google_fonts: ^6.1.0
   carousel_slider: ^5.0.0
   shared_preferences: 2.2.2
-  intl: ^0.20.3
+  intl: ^0.20.2
   fl_chart: ^0.65.0
   marquee: ^2.2.3
   youtube_player_flutter: ^9.0.4
@@ -30,7 +30,6 @@ dependencies:
   flutter_local_notifications: ^18.0.1
   timezone: ^0.10.0
   flutter_timezone: ^4.1.1
-  # Firebase foundation (initialization is opt-in until project keys are supplied)
   firebase_core: ^4.2.1
   firebase_auth: ^6.1.2
   cloud_firestore: ^6.1.0
@@ -44,7 +43,7 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: false
-  image_path: "assets/app_icon.png" # 🔥 আপনার লোগোর নাম
+  image_path: "assets/app_icon.png"
 
 dependency_overrides:
   flutter_inappwebview: ^6.0.0
