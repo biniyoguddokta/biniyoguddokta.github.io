@@ -1,3 +1,4 @@
+
 name: Build APK
 
 on:
@@ -21,7 +22,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: '3.44.9'
           cache: true
 
       - name: Verify permanent Android project
