@@ -19,16 +19,52 @@ class ApiService {
     _pendingGets.clear();
   }
 
+  /// Apps Script ContentService commonly answers POST with HTTP 302 and a
+  /// Location header pointing to script.googleusercontent.com. Treat that as
+  /// the normal response redirect and fetch the redirected JSON body.
+  static Future<http.Response> _postAppsScript(Uri uri, Map<String, String> headers, String body) async {
+    final client = http.Client();
+    try {
+      final request = http.Request('POST', uri)
+        ..followRedirects = false
+        ..headers.addAll(headers)
+        ..body = body;
+      final streamed = await client.send(request);
+      var response = await http.Response.fromStream(streamed);
+
+      if (response.statusCode == 301 || response.statusCode == 302 || response.statusCode == 303) {
+        final location = response.headers['location'];
+        if (location == null || location.isEmpty) {
+          return http.Response(
+            'Apps Script returned HTTP ${response.statusCode} without a redirect location.',
+            response.statusCode,
+            headers: response.headers,
+          );
+        }
+        final redirectUri = uri.resolve(location);
+        if (redirectUri.scheme != 'https' ||
+            !(redirectUri.host == 'script.googleusercontent.com' ||
+              redirectUri.host.endsWith('.googleusercontent.com'))) {
+          return http.Response('Unexpected Apps Script redirect host: ${redirectUri.host}', 502);
+        }
+        response = await client.get(redirectUri);
+      }
+      return response;
+    } finally {
+      client.close();
+    }
+  }
+
   /// Authenticates on Apps Script. The PIN is never downloaded with member data.
   static Future<Map<String, dynamic>> login({
     required String phone,
     required String pin,
   }) async {
     try {
-      final response = await http.post(
+      final response = await _postAppsScript(
         Uri.parse('$baseUrl?action=login'),
-        headers: const {'Content-Type': 'application/json'},
-        body: jsonEncode({'phone': phone, 'pin': pin}),
+        const {'Content-Type': 'application/json'},
+        jsonEncode({'phone': phone, 'pin': pin}),
       );
       if (response.statusCode != 200) {
         return {'status': 'error', 'message': 'Server Error: ${response.statusCode}'};
@@ -128,10 +164,10 @@ class ApiService {
         return {'status': 'error', 'message': 'লগইন সেশন নেই। আবার লগইন করুন।'};
       }
       final payload = Map<String, dynamic>.from(body)..['token'] = token;
-      final response = await http.post(
+      final response = await _postAppsScript(
         Uri.parse('$baseUrl?action=$action'),
-        headers: const {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
+        const {'Content-Type': 'application/json'},
+        jsonEncode(payload),
       );
       if (response.body.contains('<!DOCTYPE html>') ||
           response.body.contains('<html>')) {
