@@ -40,7 +40,7 @@ class StockController extends ChangeNotifier {
   int get lowStockCount => _data.lowStockCount;
   int get expiringSoonCount => _data.expiringSoonCount;
 
-  /// প্রথমবার অথবা প্রয়োজন অনুযায়ী Google Sheets থেকে সব তথ্য লোড।
+  /// Google Sheets থেকে সব তথ্য লোড।
   Future<void> load({bool forceRefresh = false}) async {
     if (_isLoading) return;
 
@@ -61,12 +61,11 @@ class StockController extends ChangeNotifier {
     }
   }
 
-  /// সার্ভার থেকে নতুন তথ্য এনে বর্তমান ডেটা আপডেট।
+  /// সার্ভার থেকে নতুন তথ্য আনা।
   Future<void> refresh() async {
     await load(forceRefresh: true);
   }
 
-  /// সব পরিবর্তনের পর সার্ভারের সর্বশেষ তথ্য পুনরায় লোড।
   Future<void> _afterSave() async {
     await load(forceRefresh: true);
   }
