@@ -33,6 +33,8 @@ import 'financial_management_screen.dart';
 import 'loss_project_screen.dart';
 import '../services/loss_project_service.dart';
 import 'pledge_documents_screen.dart';
+// ১. Import যোগ করুন — অন্য screen import-এর পাশে:
+import 'stock_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -423,7 +425,7 @@ class HomeContentState extends State<HomeContent> {
         }
 
         // কিস্তিতে পণ্যের সম্ভাব্য নিট মুনাফা (মোট মুনাফা - ব্যবসায়িক ব্যয়)
-        // এবং লোকাল Loss Project-এর নিট ক্ষতি মোট সম্পদে একবারই সমন্বয় হবে।
+        // এবং লোকাল Loss Project-এর নিট ক্ষতি মোট সম্পদে একবারই সমন্বয় হবে।
         double installmentNetProfit = 0;
         if (installmentRes is Map && installmentRes['error'] == null) {
           final contracts = (installmentRes['contracts'] as List? ?? []);
@@ -1163,11 +1165,23 @@ class HomeContentState extends State<HomeContent> {
                     ),
                   ),
 
-                  _buildModuleIcon(
-                    Icons.inventory,
-                    "স্টক",
-                    Colors.purple,
-                    isDark,
+                  // ২. স্টক মডিউলের পুরানো অংশটি সম্পূর্ণ বদলে দিন:
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const StockScreen(),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(15),
+                    child: _buildModuleIcon(
+                      Icons.inventory_2_rounded,
+                      "স্টক",
+                      Colors.purple,
+                      isDark,
+                    ),
                   ),
 
                   _buildModuleIcon(
