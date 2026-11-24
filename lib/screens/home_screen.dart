@@ -17,6 +17,7 @@ import 'late_fee_screen.dart';
 import 'meeting_screen.dart';
 import 'due_list_screen.dart';
 import 'report_screen.dart';
+import 'salary_screen.dart';
 import 'transaction_list_screen.dart';
 import 'investment_screen.dart';
 import 'installment_product_screen.dart';
@@ -1074,17 +1075,18 @@ class HomeContentState extends State<HomeContent> {
                     isDark,
                   ),
 
+                  // স্যালারি মডিউল
                   InkWell(
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (c) => const ReportScreen(),
+                        builder: (c) => const SalaryScreen(),
                       ),
                     ),
                     child: _buildModuleIcon(
-                      Icons.bar_chart,
-                      "রিপোর্ট",
-                      Colors.indigo,
+                      Icons.payments_rounded,
+                      "স্যালারি",
+                      Colors.green,
                       isDark,
                     ),
                   ),
