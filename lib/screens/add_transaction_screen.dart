@@ -1,7 +1,6 @@
+
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
@@ -20,7 +19,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final _dateController = TextEditingController();
   bool _isLoading = false;
   String _status = "Paid";
-  
+
   String userName = "";
   String userRole = "";
   String? _selectedMember;
@@ -29,12 +28,21 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   List<dynamic> members = [];
   bool _isFetchingMembers = true;
-  
-  File? _receiptImage;
-  String _receiptBase64 = "";
 
-  final List<String> paymentMethods = ["HAND CASH", "BANK ACCOUNT", "MFS ACCOUNT"];
-  final List<String> sectors = ["কৃষি", "রিয়েল এস্টেট", "প্রযুক্তি", "শিক্ষা", "স্বাস্থ্যসেবা", "ব্যবসা"];
+  final List<String> paymentMethods = [
+    "HAND CASH",
+    "BANK ACCOUNT",
+    "MFS ACCOUNT"
+  ];
+
+  final List<String> sectors = [
+    "কৃষি",
+    "রিয়েল এস্টেট",
+    "প্রযুক্তি",
+    "শিক্ষা",
+    "স্বাস্থ্যসেবা",
+    "ব্যবসা"
+  ];
 
   @override
   void initState() {
@@ -50,153 +58,275 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
     if (userRole == 'Admin') {
       var res = await ApiService.getAllMembers();
+      if (!mounted) return;
+
       if (res is List) {
-        setState(() { members = res; _isFetchingMembers = false; });
+        setState(() {
+          members = res;
+          _isFetchingMembers = false;
+        });
       } else {
         setState(() => _isFetchingMembers = false);
       }
     } else {
-      setState(() { _selectedMember = userName; _isFetchingMembers = false; });
+      if (!mounted) return;
+      setState(() {
+        _selectedMember = userName;
+        _isFetchingMembers = false;
+      });
     }
   }
 
   Future<void> _pickDate() async {
     DateTime? pickedDate = await showDatePicker(
-      context: context, initialDate: DateTime.now(), firstDate: DateTime(2020), lastDate: DateTime(2030),
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
     );
-    if (pickedDate != null) setState(() => _dateController.text = DateFormat('yyyy-MM-dd').format(pickedDate));
+
+    if (pickedDate != null) {
+      setState(() {
+        _dateController.text = DateFormat('yyyy-MM-dd').format(pickedDate);
+      });
+    }
   }
 
   void _submit() async {
     String amount = _amountController.text.trim();
+
     if (amount.isEmpty || _selectedMember == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("টাকার পরিমাণ এবং সদস্য নির্বাচন করুন"), backgroundColor: Colors.orange));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("টাকার পরিমাণ এবং সদস্য নির্বাচন করুন"),
+          backgroundColor: Colors.orange,
+        ),
+      );
       return;
     }
 
     if (widget.type == "জমা") {
       setState(() => _isLoading = true);
+
       var txRes = await ApiService.getTransactions();
+
       if (txRes is List) {
         String selectedDate = _dateController.text;
-        String selectedMonth = selectedDate.substring(0, 7); // "yyyy-MM"
+        String selectedMonth = selectedDate.substring(0, 7);
 
         bool hasDeposited = txRes.any((tx) {
           String txMember = tx['MemberName'].toString().trim().toLowerCase();
           String txType = tx['Type'].toString().trim();
           String txDate = tx['Date'].toString().trim();
           String txStatus = tx['Status']?.toString().trim() ?? 'Paid';
-          
-          return txMember == _selectedMember!.trim().toLowerCase() && 
-                 txType == 'জমা' && 
-                 txStatus == 'Paid' &&
-                 txDate.contains(selectedMonth); 
+
+          return txMember == _selectedMember!.trim().toLowerCase() &&
+              txType == 'জমা' &&
+              txStatus == 'Paid' &&
+              txDate.contains(selectedMonth);
         });
-        
+
         if (hasDeposited) {
+          if (!mounted) return;
           setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("$_selectedMember এই মাসে ইতিমধ্যে জমা দিয়েছেন!"), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("$_selectedMember এই মাসে ইতিমধ্যে জমা দিয়েছেন!"),
+              backgroundColor: Colors.red,
+            ),
+          );
           return;
         }
       }
     }
 
+    if (!mounted) return;
     setState(() => _isLoading = true);
 
     var response = await ApiService.addTransaction(
-      type: widget.type, 
-      amount: amount, 
-      note: _noteController.text.trim(), 
-      memberName: _selectedMember!, 
-      status: _status, 
-      date: _dateController.text, 
+      type: widget.type,
+      amount: amount,
+      note: _noteController.text.trim(),
+      memberName: _selectedMember!,
+      status: _status,
+      date: _dateController.text,
       paymentMethod: _selectedPaymentMethod ?? "HAND CASH",
     );
-    
+
+    if (!mounted) return;
     setState(() => _isLoading = false);
 
-    if (response['status'] == "success" || response['message'] == "Success" || response['message'] == "Saved" || response['message'].contains("302")) {
-      if (!mounted) return;
+    if (response['status'] == "success" ||
+        response['message'] == "Success" ||
+        response['message'] == "Saved" ||
+        response['message'].toString().contains("302")) {
       Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("সফলভাবে সেভ হয়েছে!"), backgroundColor: Colors.green));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("সফলভাবে সেভ হয়েছে!"),
+          backgroundColor: Colors.green,
+        ),
+      );
     } else {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response['message'] ?? "সমস্যা"), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response['message'] ?? "সমস্যা"),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _noteController.dispose();
+    _dateController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("${widget.type} করুন"), backgroundColor: const Color(0xFF142F52), foregroundColor: Colors.white),
-      body: _isFetchingMembers 
-        ? const Center(child: CircularProgressIndicator())
-        : SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              if (userRole == 'Admin' && widget.type != "আয়") ...[
-                DropdownButtonFormField<String>(
-                  value: _selectedMember,
-                  decoration: InputDecoration(labelText: "সদস্য নির্বাচন করুন", border: OutlineInputBorder(borderRadius: BorderRadius.circular(15))),
-                  items: members.map((m) => DropdownMenuItem(value: m['Name'].toString(), child: Text(m['Name'].toString()))).toList(),
-                  onChanged: (val) => setState(() => _selectedMember = val),
-                ),
-                const SizedBox(height: 20),
-              ],
-
-              if (widget.type == "আয়") ...[
-                DropdownButtonFormField<String>(
-                  value: _selectedSector,
-                  decoration: InputDecoration(labelText: "বিনিয়োগ খাত (সেক্টর) নির্বাচন করুন", border: OutlineInputBorder(borderRadius: BorderRadius.circular(15))),
-                  items: sectors.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                  onChanged: (val) => setState(() { _selectedSector = val; _selectedMember = val; }),
-                ),
-                const SizedBox(height: 20),
-              ],
-
-              TextField(
-                controller: _amountController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: "টাকার পরিমাণ (৳)", prefixIcon: const Icon(Icons.money), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15))),
+      appBar: AppBar(
+        title: Text("${widget.type} করুন"),
+        backgroundColor: const Color(0xFF00796B),
+        foregroundColor: Colors.white,
+      ),
+      body: _isFetchingMembers
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  if (userRole == 'Admin' && widget.type != "আয়") ...[
+                    DropdownButtonFormField<String>(
+                      value: _selectedMember,
+                      decoration: InputDecoration(
+                        labelText: "সদস্য নির্বাচন করুন",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                      ),
+                      items: members
+                          .map(
+                            (m) => DropdownMenuItem<String>(
+                              value: m['Name'].toString(),
+                              child: Text(m['Name'].toString()),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (val) =>
+                          setState(() => _selectedMember = val),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                  if (widget.type == "আয়") ...[
+                    DropdownButtonFormField<String>(
+                      value: _selectedSector,
+                      decoration: InputDecoration(
+                        labelText: "বিনিয়োগ খাত (সেক্টর) নির্বাচন করুন",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                      ),
+                      items: sectors
+                          .map(
+                            (s) => DropdownMenuItem(
+                              value: s,
+                              child: Text(s),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (val) => setState(() {
+                        _selectedSector = val;
+                        _selectedMember = val;
+                      }),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                  TextField(
+                    controller: _amountController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: "টাকার পরিমাণ (৳)",
+                      prefixIcon: const Icon(Icons.money),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  if (widget.type == "জমা") ...[
+                    DropdownButtonFormField<String>(
+                      value: _selectedPaymentMethod,
+                      decoration: InputDecoration(
+                        labelText: "পেমেন্ট মেথড (Payment Method)",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                      ),
+                      items: paymentMethods
+                          .map(
+                            (m) => DropdownMenuItem(
+                              value: m,
+                              child: Text(m),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (val) =>
+                          setState(() => _selectedPaymentMethod = val),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                  TextField(
+                    controller: _dateController,
+                    readOnly: true,
+                    onTap: _pickDate,
+                    decoration: InputDecoration(
+                      labelText: "তারিখ",
+                      prefixIcon: const Icon(Icons.calendar_today),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: _noteController,
+                    decoration: InputDecoration(
+                      labelText: "বিবরণ / নোট (ঐচ্ছিক)",
+                      prefixIcon: const Icon(Icons.note),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF00796B),
+                      ),
+                      onPressed: _isLoading ? null : _submit,
+                      child: _isLoading
+                          ? const CircularProgressIndicator(
+                              color: Colors.white,
+                            )
+                          : const Text(
+                              "সেভ করুন",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 20),
-
-              if (widget.type == "জমা") ...[
-                DropdownButtonFormField<String>(
-                  value: _selectedPaymentMethod,
-                  decoration: InputDecoration(labelText: "পেমেন্ট মেথড (Payment Method)", border: OutlineInputBorder(borderRadius: BorderRadius.circular(15))),
-                  items: paymentMethods.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
-                  onChanged: (val) => setState(() => _selectedPaymentMethod = val),
-                ),
-                const SizedBox(height: 20),
-              ],
-
-              TextField(
-                controller: _dateController,
-                readOnly: true,
-                onTap: _pickDate,
-                decoration: InputDecoration(labelText: "তারিখ", prefixIcon: const Icon(Icons.calendar_today), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15))),
-              ),
-              const SizedBox(height: 20),
-
-              TextField(
-                controller: _noteController,
-                decoration: InputDecoration(labelText: "বিবরণ / নোট (ঐচ্ছিক)", prefixIcon: const Icon(Icons.note), border: OutlineInputBorder(borderRadius: BorderRadius.circular(15))),
-              ),
-              const SizedBox(height: 20),
-              
-              SizedBox(
-                width: double.infinity, height: 50,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF142F52)),
-                  onPressed: _isLoading ? null : _submit,
-                  child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text("সেভ করুন", style: TextStyle(color: Colors.white, fontSize: 18)),
-                ),
-              )
-            ],
-          ),
-        ),
+            ),
     );
   }
 }
