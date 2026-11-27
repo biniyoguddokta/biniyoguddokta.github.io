@@ -658,108 +658,89 @@ class HomeContentState extends State<HomeContent> {
       onRefresh: () => fetchDashboardData(forceRefresh: true),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        child: Column(
+        child: Container(
+          color: isDark ? const Color(0xFF121827) : const Color(0xFFF8F7FC),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ১. টপ বার
-
+            // Premium header + brand identity
             Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 10,
-              ),
+              padding: const EdgeInsets.fromLTRB(18, 14, 18, 8),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  SizedBox(
-                    width: 48, height: 48,
-                    child: Builder(
-                    builder: (context) => IconButton(
-                      icon: const Icon(
-                        Icons.menu,
-                        color: Color(0xFF142F52),
-                        size: 30,
-                      ),
-                      onPressed: () => Scaffold.of(context).openDrawer(),
-                    ),
-                  )),
-
-                  GestureDetector(
-                    onTap: _toggleBalance,
-                    child: AnimatedContainer(
-                      duration:
-                          const Duration(milliseconds: 300),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 35,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _isBalanceVisible
-                            ? Colors.white
-                            : Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(25),
-                        boxShadow: _isBalanceVisible
-                            ? [
-                                BoxShadow(
-                                  color:
-                                      Colors.black.withOpacity(0.15),
-                                  blurRadius: 8,
-                                )
-                              ]
-                            : [],
-                        border: Border.all(
-                          color: Colors.grey.shade300,
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            "মোট সম্পদ",
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: _isBalanceVisible
-                                  ? const Color(0xFF142F52)
-                                  : Colors.black54,
-                            ),
-                          ),
-                          if (_isBalanceVisible) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              "৳ ${totalAssets.toStringAsFixed(0)}",
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ],
-                        ],
+                  Builder(
+                    builder: (context) => Material(
+                      color: isDark ? Colors.white10 : const Color(0xFFEAF7EF),
+                      shape: const CircleBorder(),
+                      child: IconButton(
+                        icon: Icon(Icons.menu_rounded, color: isDark ? Colors.white : const Color(0xFF087A43)),
+                        onPressed: () => Scaffold.of(context).openDrawer(),
                       ),
                     ),
                   ),
-
-                  SizedBox(
-                    width: 48, height: 48,
-                    child: IconButton(
-                      tooltip: 'Smart Search',
-                      icon: const Icon(Icons.search_rounded, color: Color(0xFF142F52), size: 28),
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SmartSearchScreen())),
+                  const SizedBox(width: 10),
+                  Container(
+                    width: 46, height: 46,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(colors: [Color(0xFF0B9B59), Color(0xFF075D3C)]),
+                    ),
+                    child: const Icon(Icons.groups_rounded, color: Colors.white, size: 28),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('সমিতি বিনিয়োগ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF17233B))),
+                        Text('স্মার্ট বিনিয়োগ, সমৃদ্ধ ভবিষ্যৎ', style: TextStyle(fontSize: 11, color: isDark ? Colors.white60 : Colors.black54)),
+                      ],
                     ),
                   ),
-                  SizedBox(
-                    width: 48, height: 48,
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
-                      onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (c) => const MoreScreen())); await _refreshOwnProfilePhoto(); },
-                      child: CircleAvatar(
-                        radius: 20, backgroundColor: const Color(0xFF142F52),
-                        backgroundImage: _profilePicUrl.isNotEmpty ? NetworkImage(_profilePicUrl) : null,
-                        child: _profilePicUrl.isEmpty ? const Icon(Icons.person, color: Colors.white, size: 23) : null,
-                      ),
+                  IconButton(
+                    tooltip: 'Smart Search',
+                    icon: Icon(Icons.search_rounded, size: 26, color: isDark ? Colors.white : const Color(0xFF17233B)),
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SmartSearchScreen())),
+                  ),
+                  InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (c) => const MoreScreen())); await _refreshOwnProfilePhoto(); },
+                    child: CircleAvatar(
+                      radius: 19, backgroundColor: const Color(0xFF087A43),
+                      backgroundImage: _profilePicUrl.isNotEmpty ? NetworkImage(_profilePicUrl) : null,
+                      child: _profilePicUrl.isEmpty ? const Icon(Icons.person, color: Colors.white, size: 22) : null,
                     ),
                   ),
                 ],
+              ),
+            ),
+
+            // Purple premium total-assets hero card
+            GestureDetector(
+              onTap: _toggleBalance,
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(18, 10, 18, 16),
+                padding: const EdgeInsets.fromLTRB(20, 18, 18, 18),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF6817D8), Color(0xFF3422C8), Color(0xFF7A20E8)]),
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [BoxShadow(color: const Color(0xFF5520C9).withOpacity(.25), blurRadius: 18, offset: const Offset(0, 9))],
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Row(children: [const Text('মোট সম্পদ', style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600)), const SizedBox(width: 8), Icon(_isBalanceVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded, color: Colors.white70, size: 17)]),
+                        const SizedBox(height: 8),
+                        Text(_isBalanceVisible ? '৳ ${totalAssets.toStringAsFixed(0)}' : '••••••••', style: const TextStyle(color: Colors.white, fontSize: 27, fontWeight: FontWeight.w900, letterSpacing: .3)),
+                        const SizedBox(height: 8),
+                        const Text('সকল ব্যবস্থাপনা, উজ্জ্বল ভবিষ্যৎ', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                      ]),
+                    ),
+                    const SizedBox(width: 8),
+                    Column(children: const [Icon(Icons.trending_up_rounded, color: Colors.white, size: 48), SizedBox(height: 4), Icon(Icons.savings_rounded, color: Color(0xFFFFD36A), size: 34)]),
+                  ],
+                ),
               ),
             ),
 
@@ -875,58 +856,26 @@ class HomeContentState extends State<HomeContent> {
 
             const SizedBox(height: 20),
 
-            // ৬. চারটি কার্ড
-
+            // Dashboard statistics
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 18),
               child: _isLoadingStats
                   ? const Center(child: CircularProgressIndicator())
                   : GridView.count(
                       crossAxisCount: 2,
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 1.72,
+                      mainAxisSpacing: 11,
+                      crossAxisSpacing: 11,
+                      childAspectRatio: 2.15,
                       children: [
-                        _buildInfoCard(
-                          "হাতে নগদ",
-                          "৳ ${cashInHand.toStringAsFixed(0)}",
-                          Icons.account_balance_wallet_rounded,
-                          const Color(0xFF2474D2),
-                          isDark,
-                        ),
-                        _buildInfoCard(
-                          "আজকের জমা",
-                          "৳ ${todayDeposit.toStringAsFixed(0)}",
-                          Icons.south_west_rounded,
-                          const Color(0xFF159B72),
-                          isDark,
-                        ),
-                        _buildInfoCard(
-                          "আজকের খরচ",
-                          "৳ ${todayExpense.toStringAsFixed(0)}",
-                          Icons.north_east_rounded,
-                          const Color(0xFFE58A32),
-                          isDark,
-                        ),
+                        _buildInfoCard('হাতে নগদ', '৳ ${cashInHand.toStringAsFixed(0)}', Icons.account_balance_wallet_rounded, const Color(0xFF1685D8), isDark),
+                        _buildInfoCard('আজকের জমা', '৳ ${todayDeposit.toStringAsFixed(0)}', Icons.south_west_rounded, const Color(0xFF159B61), isDark),
+                        _buildInfoCard('আজকের খরচ', '৳ ${todayExpense.toStringAsFixed(0)}', Icons.north_east_rounded, const Color(0xFFE64B62), isDark),
                         InkWell(
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const TransactionHistoryScreen())),
                           borderRadius: BorderRadius.circular(18),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (c) => const TransactionHistoryScreen(),
-                              ),
-                            );
-                          },
-                          child: _buildInfoCard(
-                            "সব লেনদেন",
-                            "$totalTransactions টি",
-                            Icons.receipt_long_rounded,
-                            const Color(0xFF8B65C7),
-                            isDark,
-                          ),
+                          child: _buildInfoCard('সব লেনদেন', '$totalTransactions টি', Icons.receipt_long_rounded, const Color(0xFF8B4DCE), isDark),
                         ),
                       ],
                     ),
@@ -977,31 +926,29 @@ class HomeContentState extends State<HomeContent> {
 
             // ৮. মডিউল ও ফিচার
 
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 15),
-              child: Text(
-                "মডিউল ও ফিচার",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
-                ),
-              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+              child: Row(children: [
+                const Icon(Icons.bolt_rounded, color: Color(0xFF6817D8), size: 22),
+                const SizedBox(width: 7),
+                Text('দ্রুত অ্যাক্সেস', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF17233B))),
+                const Spacer(),
+                Text('সব মডিউল', style: TextStyle(fontSize: 11, color: isDark ? Colors.white60 : const Color(0xFF6817D8), fontWeight: FontWeight.w700)),
+              ]),
             ),
 
             const SizedBox(height: 15),
 
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 15),
+              padding: const EdgeInsets.symmetric(horizontal: 18),
               child: GridView.count(
                 crossAxisCount: 3,
                 shrinkWrap: true,
                 physics:
                     const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 15,
-                crossAxisSpacing: 15,
-                childAspectRatio: 1,
+                mainAxisSpacing: 11,
+                crossAxisSpacing: 11,
+                childAspectRatio: 0.98,
                 children: [
                   InkWell(
                     onTap: () => Navigator.push(
@@ -1633,6 +1580,7 @@ class HomeContentState extends State<HomeContent> {
 
             const SizedBox(height: 30),
           ],
+          ),
         ),
       ),
     );
@@ -1648,67 +1596,22 @@ class HomeContentState extends State<HomeContent> {
     bool isDark,
   ) {
     return Container(
-      constraints: const BoxConstraints(minHeight: 96),
-      padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF202B3B) : Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.06) : const Color(0xFFE9EEF5),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.10 : 0.045),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
-          ),
-        ],
+        color: isDark ? const Color(0xFF20283A) : color.withOpacity(.09),
+        borderRadius: BorderRadius.circular(19),
+        border: Border.all(color: color.withOpacity(.16)),
+        boxShadow: [BoxShadow(color: color.withOpacity(.07), blurRadius: 12, offset: const Offset(0, 5))],
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: color, size: 21),
-          ),
-          const SizedBox(width: 11),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white70 : const Color(0xFF778397),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    amount,
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? Colors.white : const Color(0xFF172A43),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+      child: Row(children: [
+        Container(width: 38, height: 38, decoration: BoxDecoration(color: color, shape: BoxShape.circle), child: Icon(icon, color: Colors.white, size: 20)),
+        const SizedBox(width: 10),
+        Expanded(child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, color: isDark ? Colors.white70 : const Color(0xFF5D6472), fontWeight: FontWeight.w600)),
+          const SizedBox(height: 4),
+          FittedBox(alignment: Alignment.centerLeft, fit: BoxFit.scaleDown, child: Text(amount, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: isDark ? Colors.white : const Color(0xFF17233B)))),
+        ])),
+      ]),
     );
   }
 
@@ -1750,15 +1653,9 @@ class HomeContentState extends State<HomeContent> {
           margin: const EdgeInsets.symmetric(horizontal: 5),
           padding: const EdgeInsets.symmetric(vertical: 15),
           decoration: BoxDecoration(
-            color: color,
+            gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [color, color.withOpacity(.82)]),
             borderRadius: BorderRadius.circular(17),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.20),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
+            boxShadow: [BoxShadow(color: color.withOpacity(.20), blurRadius: 9, offset: const Offset(0, 4))],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1793,49 +1690,18 @@ class HomeContentState extends State<HomeContent> {
     bool isDark,
   ) {
     return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF202B3B) : Colors.white,
+        color: isDark ? const Color(0xFF20283A) : color.withOpacity(.075),
         borderRadius: BorderRadius.circular(19),
-        border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.06) : const Color(0xFFE9EEF5),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.10 : 0.035),
-            blurRadius: 13,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: color.withOpacity(.14)),
+        boxShadow: [BoxShadow(color: color.withOpacity(.055), blurRadius: 10, offset: const Offset(0, 4))],
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 49,
-            height: 49,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.11),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(icon, color: color, size: 25),
-          ),
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: isDark ? Colors.white : const Color(0xFF26364B),
-              ),
-            ),
-          ),
-        ],
-      ),
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Container(width: 48, height: 48, decoration: BoxDecoration(color: color.withOpacity(.14), borderRadius: BorderRadius.circular(15)), child: Icon(icon, color: color, size: 28)),
+        const SizedBox(height: 8),
+        Text(label, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF263247))),
+      ]),
     );
   }
 
