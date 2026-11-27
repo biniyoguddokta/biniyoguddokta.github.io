@@ -214,7 +214,6 @@ class HomeContentState extends State<HomeContent> {
   int pendingMembersCount = 0;
 
   List<dynamic> recentTransactions = [];
-  String _recentFilter = 'সব';
 
   List<dynamic> recentInvestments = [];
 
@@ -340,8 +339,12 @@ class HomeContentState extends State<HomeContent> {
         double tempTodayExpense = 0.0;
         double tempMonthCollection = 0.0;
 
-        // ড্যাশবোর্ডের সব লেনদেনের প্রকৃত সংখ্যা।
-        int tempTotalTx = response.length;
+        // শুধু Paid লেনদেন গণনা হবে
+        int tempTotalTx = response.where((tx) {
+          String status =
+              tx['Status']?.toString().trim() ?? 'Paid';
+          return status == 'Paid';
+        }).length;
 
         List<dynamic> tempRecent = [];
 
@@ -457,13 +460,19 @@ class HomeContentState extends State<HomeContent> {
           }
         }
 
-        // সর্বশেষ সব ধরনের লেনদেন দেখানো হবে; Paid/Unpaid উভয় স্ট্যাটাস থাকবে।
-        final orderedTransactions = List<dynamic>.from(response);
-        if (orderedTransactions.length > 5) {
-          tempRecent = orderedTransactions.sublist(orderedTransactions.length - 5).reversed.toList();
+        // 🔥 এখানে আপনার দেওয়া নতুন কোডটি বসানো হয়েছে 🔥
+        // শুধুমাত্র Paid (সফল) লেনদেনগুলো ফিল্টার করে সাম্প্রতিক লেনদেন দেখানো হবে
+        List<dynamic> paidTransactions = response.where((tx) {
+          String status = tx['Status']?.toString().trim() ?? 'Paid';
+          return status == 'Paid';
+        }).toList();
+
+        if (paidTransactions.length > 5) {
+          tempRecent = paidTransactions.sublist(paidTransactions.length - 5).reversed.toList();
         } else {
-          tempRecent = orderedTransactions.reversed.toList();
+          tempRecent = paidTransactions.reversed.toList();
         }
+        // 🔥 নতুন কোড শেষ 🔥
 
         setState(() {
           cashInHand = tempCash;
@@ -489,152 +498,27 @@ class HomeContentState extends State<HomeContent> {
   }
 
   Widget _buildRecentInvestments(bool isDark) {
-    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-    final titleColor = isDark ? Colors.white : const Color(0xFF183153);
-    final mutedColor = isDark ? Colors.white60 : Colors.black54;
-
+    final titleColor = isDark ? Colors.white : const Color(0xFF252642);
+    final muted = isDark ? Colors.white60 : Colors.black54;
+    final card = isDark ? const Color(0xFF1E1E2B) : Colors.white;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 15),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.white12 : const Color(0xFFE2EAF1),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.08 : 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.trending_up, color: Color(0xFF142F52), size: 21),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  "সাম্প্রতিক বিনিয়োগ",
-                  style: TextStyle(
-                    color: titleColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => InvestmentScreen(userRole: userRole),
-                    ),
-                  );
-                },
-                child: const Text("সব দেখুন"),
-              ),
-            ],
-          ),
-          if (_isLoadingStats && recentInvestments.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(
-                child: SizedBox(
-                  height: 22,
-                  width: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
-            )
-          else if (recentInvestments.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                "এখনো কোনো বিনিয়োগের তথ্য পাওয়া যায়নি",
-                style: TextStyle(color: mutedColor, fontSize: 13),
-              ),
-            )
-          else
-            ...recentInvestments.map((investment) {
-              final project = investment['ProjectName']?.toString() ?? 'নাম উল্লেখ নেই';
-              final sector = investment['Sector']?.toString() ?? '';
-              final amount = investment['InvestAmount']?.toString() ?? '0';
-              final status = investment['Status']?.toString() ?? 'অজানা';
-              final isActive = status == 'সক্রিয়';
-              return Padding(
-                padding: const EdgeInsets.only(top: 9),
-                child: Row(
-                  children: [
-                    Container(
-                      height: 38,
-                      width: 38,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF142F52).withOpacity(0.10),
-                        borderRadius: BorderRadius.circular(11),
-                      ),
-                      child: const Icon(
-                        Icons.account_balance_wallet_outlined,
-                        color: Color(0xFF142F52),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            project,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: titleColor,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                            ),
-                          ),
-                          if (sector.isNotEmpty)
-                            Text(
-                              sector,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: mutedColor, fontSize: 11),
-                            ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          "৳ $amount",
-                          style: TextStyle(
-                            color: titleColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                        Text(
-                          status,
-                          style: TextStyle(
-                            color: isActive ? Colors.green : mutedColor,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            }),
-        ],
-      ),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(20), border: Border.all(color: isDark ? Colors.white12 : const Color(0xFFE8E7F3)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? .08 : .035), blurRadius: 14, offset: const Offset(0, 4))]),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [Container(width: 38, height: 38, decoration: BoxDecoration(color: const Color(0xFF5146A5).withOpacity(.11), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.trending_up_rounded, color: Color(0xFF5146A5))), const SizedBox(width: 10), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('সাম্প্রতিক বিনিয়োগ', style: TextStyle(color: titleColor, fontSize: 16, fontWeight: FontWeight.w900)), Text('সর্বশেষ যুক্ত হওয়া প্রজেক্ট', style: TextStyle(color: muted, fontSize: 11))])), TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => InvestmentScreen(userRole: userRole))), child: const Text('সব দেখুন'))]),
+        const SizedBox(height: 8),
+        if (_isLoadingStats && recentInvestments.isEmpty) const Padding(padding: EdgeInsets.all(18), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+        else if (recentInvestments.isEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 15), child: Text('এখনো কোনো বিনিয়োগের তথ্য পাওয়া যায়নি', style: TextStyle(color: muted, fontSize: 13)))
+        else ...recentInvestments.map((investment) {
+          final project = (investment['ProjectName'] ?? 'নাম উল্লেখ নেই').toString();
+          final sector = (investment['Sector'] ?? '').toString();
+          final amount = double.tryParse('${investment['InvestAmount'] ?? 0}'.replaceAll(',', '')) ?? 0;
+          final status = (investment['Status'] ?? 'অজানা').toString();
+          final active = status == 'সক্রিয়';
+          return Container(margin: const EdgeInsets.only(top: 9), padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(.035) : const Color(0xFFF8F7FD), borderRadius: BorderRadius.circular(15), border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFECEAF6))), child: Row(children: [Container(width: 42, height: 42, decoration: BoxDecoration(color: const Color(0xFF5146A5).withOpacity(.11), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.business_center_rounded, color: Color(0xFF5146A5))), const SizedBox(width: 11), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(project, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: titleColor, fontWeight: FontWeight.w800, fontSize: 13)), if (sector.isNotEmpty) Text(sector, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 11)), const SizedBox(height: 4), Text(status, style: TextStyle(color: active ? const Color(0xFF15945E) : const Color(0xFF7468C7), fontSize: 10, fontWeight: FontWeight.w700))])), const SizedBox(width: 8), Text('৳ ${NumberFormat('#,##0.##').format(amount)}', style: TextStyle(color: titleColor, fontWeight: FontWeight.w900, fontSize: 13))]));
+        }),
+      ]),
     );
   }
 
@@ -683,7 +567,7 @@ class HomeContentState extends State<HomeContent> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('বিনিয়োগ উদ্যোক্তা', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF17233B))),
+                        Text('সমিতি বিনিয়োগ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF17233B))),
                         Text('স্মার্ট বিনিয়োগ, সমৃদ্ধ ভবিষ্যৎ', style: TextStyle(fontSize: 11, color: isDark ? Colors.white60 : Colors.black54)),
                       ],
                     ),
@@ -742,7 +626,6 @@ class HomeContentState extends State<HomeContent> {
 
             // ৪. বকেয়া বক্স
 
-            if (DateTime.now().day >= 16 && pendingMembersCount > 0) ...[
             InkWell(
               onTap: () {
                 Navigator.push(
@@ -806,7 +689,6 @@ class HomeContentState extends State<HomeContent> {
                 ),
               ),
             ),
-            ],
 
             // ৫. শুভেচ্ছা
 
@@ -1128,90 +1010,85 @@ class HomeContentState extends State<HomeContent> {
 
             const SizedBox(height: 30),
 
-            // ৯. সাম্প্রতিক লেনদেন — ফিল্টার, স্ট্যাটাস ও সম্পূর্ণ হিস্ট্রির লিংক
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Row(
-                children: [
-                  Text('সাম্প্রতিক লেনদেন', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF17233B))),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TransactionHistoryScreen())),
-                    child: const Text('সব দেখুন'),
-                  ),
-                ],
+            // ৯. সাম্প্রতিক লেনদেন
+
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 15),
+              child: Text(
+                "সাম্প্রতিক লেনদেন",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
               ),
             ),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 38,
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                scrollDirection: Axis.horizontal,
-                children: ['সব', 'জমা', 'খরচ', 'আয়', 'বিনিয়োগ', 'বিলম্ব ফী'].map((filter) {
-                  final selected = _recentFilter == filter;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(filter),
-                      selected: selected,
-                      onSelected: (_) => setState(() => _recentFilter = filter),
-                      selectedColor: const Color(0xFF6817D8),
-                      backgroundColor: isDark ? const Color(0xFF20283A) : Colors.white,
-                      labelStyle: TextStyle(color: selected ? Colors.white : (isDark ? Colors.white70 : const Color(0xFF344054)), fontWeight: FontWeight.w700, fontSize: 12),
-                      side: BorderSide(color: selected ? const Color(0xFF6817D8) : (isDark ? Colors.white12 : const Color(0xFFE5E7EB))),
-                      showCheckmark: false,
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-            const SizedBox(height: 10),
+
+            const SizedBox(height: 15),
+
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              child: Builder(builder: (context) {
-                final rows = recentTransactions.where((tx) {
-                  final type = (tx['Type'] ?? '').toString().trim();
-                  if (_recentFilter == 'সব') return true;
-                  if (_recentFilter == 'আয়') return type == 'আয়' || type == 'আয়';
-                  return type == _recentFilter;
-                }).toList();
-                if (rows.isEmpty) {
-                  return Padding(padding: const EdgeInsets.all(18), child: Center(child: Text('এই ধরনের কোনো লেনদেন নেই', style: TextStyle(color: isDark ? Colors.white60 : Colors.black54))));
-                }
-                return Column(children: rows.map((tx) {
-                  final type = (tx['Type'] ?? 'লেনদেন').toString().trim();
-                  final status = (tx['Status'] ?? 'Paid').toString().trim();
-                  final amount = double.tryParse((tx['Amount'] ?? '0').toString().replaceAll(',', '')) ?? 0;
-                  final isCredit = type == 'জমা' || type == 'আয়' || type == 'আয়' || type == 'বিলম্ব ফী';
-                  final isPaid = status.toLowerCase() == 'paid' || status == 'পরিশোধিত';
-                  final color = type == 'বিনিয়োগ' ? const Color(0xFF8B4DCE) : (type == 'খরচ' ? const Color(0xFFE64B62) : (isCredit ? const Color(0xFF159B61) : const Color(0xFF1685D8)));
-                  final date = (tx['Date'] ?? '').toString().split(' ').first;
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 9),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF20283A) : Colors.white,
-                      borderRadius: BorderRadius.circular(17),
-                      border: Border.all(color: color.withOpacity(.12)),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? .04 : .035), blurRadius: 10, offset: const Offset(0, 3))],
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 15),
+              child: recentTransactions.isEmpty
+                  ? const Center(
+                      child: Text("কোনো লেনদেন নেই"),
+                    )
+                  : Column(
+                      children:
+                          recentTransactions.map((tx) {
+                        bool isDeposit =
+                            tx['Type'] == 'জমা';
+
+                        return Card(
+                          color: isDark
+                              ? Colors.grey[800]
+                              : Colors.white,
+                          margin: const EdgeInsets.only(
+                            bottom: 10,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(12),
+                          ),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: isDeposit
+                                  ? Colors.green.withOpacity(0.1)
+                                  : Colors.red.withOpacity(0.1),
+                              child: Icon(
+                                isDeposit
+                                    ? Icons.arrow_downward
+                                    : Icons.arrow_upward,
+                                color: isDeposit
+                                    ? Colors.green
+                                    : Colors.red,
+                              ),
+                            ),
+                            title: Text(
+                              tx['Type'].toString(),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: isDeposit
+                                    ? Colors.green
+                                    : Colors.red,
+                              ),
+                            ),
+                            subtitle: Text(
+                              "${tx['MemberName']} | ${tx['Date'].toString().split(' ')[0]}",
+                            ),
+                            trailing: Text(
+                              "৳ ${tx['Amount']}",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: isDeposit
+                                    ? Colors.green
+                                    : Colors.red,
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
                     ),
-                    child: Row(children: [
-                      Container(width: 42, height: 42, decoration: BoxDecoration(color: color.withOpacity(.12), borderRadius: BorderRadius.circular(13)), child: Icon(type == 'জমা' ? Icons.south_west_rounded : (type == 'খরচ' ? Icons.north_east_rounded : (type == 'বিনিয়োগ' ? Icons.trending_up_rounded : Icons.account_balance_wallet_outlined)), color: color)),
-                      const SizedBox(width: 11),
-                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(type, style: TextStyle(fontWeight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF202B40))),
-                        const SizedBox(height: 3),
-                        Text('${tx['MemberName'] ?? 'সাধারণ হিসাব'} • $date', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11, color: isDark ? Colors.white60 : Colors.black54)),
-                        const SizedBox(height: 4),
-                        Container(padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2), decoration: BoxDecoration(color: (isPaid ? Colors.green : Colors.orange).withOpacity(.12), borderRadius: BorderRadius.circular(20)), child: Text(isPaid ? 'পরিশোধিত' : status, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: isPaid ? Colors.green : Colors.orange))),
-                      ])),
-                      const SizedBox(width: 8),
-                      Text('৳ ${amount.toStringAsFixed(0)}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: color)),
-                    ]),
-                  );
-                }).toList());
-              }),
             ),
 
             const SizedBox(height: 30),
@@ -1631,11 +1508,6 @@ class HomeContentState extends State<HomeContent> {
                   userRole: userRole,
                 ),
               ),
-            );
-          } else if (type == "জমা") {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const CollectionScreen()),
             );
           } else {
             await Navigator.push(
