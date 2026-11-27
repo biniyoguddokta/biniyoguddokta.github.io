@@ -23,13 +23,8 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     var res = await ApiService.getTransactions();
     if (res is List) {
       setState(() {
-        // 🔥 শুধুমাত্র Paid (পরিশোধিত) লেনদেনগুলো ফিল্টার করে নেওয়া হলো
-        List<dynamic> paidTransactions = res.where((tx) {
-          final status = (tx['Status'] ?? '').toString().trim().toLowerCase();
-          return status == 'paid' || status == 'পরিশোধিত';
-        }).toList();
-        // নতুন লেনদেন আগে দেখানোর জন্য রিভার্স
-        allTransactions = paidTransactions.reversed.toList();
+        // Paid ও Unpaid—সব লেনদেন একই হিস্ট্রিতে দেখানো হবে।
+        allTransactions = res.reversed.toList();
         isLoading = false;
       });
     } else {
@@ -53,7 +48,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : allTransactions.isEmpty
-              ? const Center(child: Text("কোনো পরিশোধিত লেনদেন পাওয়া যায়নি!"))
+              ? const Center(child: Text("কোনো লেনদেন পাওয়া যায়নি!"))
               : ListView.builder(
                   padding: const EdgeInsets.all(15),
                   itemCount: allTransactions.length,
@@ -85,6 +80,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                             Text("সদস্য: ${tx['MemberName']}"),
                             Text("বিবরণ: ${tx['Note'].toString().isEmpty ? 'নেই' : tx['Note']}", style: const TextStyle(fontSize: 12)),
                             Text("তারিখ: ${tx['Date'].toString().split(' ')[0]}", style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                            Text("স্ট্যাটাস: ${(tx['Status'] ?? 'Paid').toString() == 'Paid' ? 'পরিশোধিত' : (tx['Status'] ?? 'বকেয়া').toString()}", style: TextStyle(fontSize: 12, color: (tx['Status'] ?? 'Paid').toString() == 'Paid' ? Colors.green : Colors.orange, fontWeight: FontWeight.w600)),
                           ],
                         ),
                         trailing: Text(
