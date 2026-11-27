@@ -449,6 +449,11 @@ class ApiService {
         'note': note,
       });
 
+  static Future<Map<String, dynamic>> deleteInvestment({
+    required String rowIndex,
+  }) =>
+      _postData('deleteInvestment', {'rowIndex': rowIndex});
+
   // ---------------- Installment Module ----------------
 
   static Future<dynamic> getInstallmentData() =>
