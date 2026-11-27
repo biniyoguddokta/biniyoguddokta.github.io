@@ -26,16 +26,16 @@ jobs:
         with:
           channel: stable
 
-      - name: Configure Flutter Web
+      - name: Enable Flutter Web
         run: flutter create . --platforms web
 
       - name: Install dependencies
         run: flutter pub get
 
       - name: Build Flutter Web
-        run: flutter build web --release --base-href /somiti-app/
+        run: flutter build web --release --base-href /
 
-      - name: Upload Web Build
+      - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: build/web
@@ -49,6 +49,6 @@ jobs:
     needs: build
 
     steps:
-      - name: Deploy Flutter Web
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
