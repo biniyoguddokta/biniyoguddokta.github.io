@@ -8,6 +8,7 @@ import '../main.dart';
 import '../app_state.dart';
 import 'login_screen.dart';
 import 'app_settings_screen.dart';
+import 'advanced_features_screen.dart';
 
 class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
@@ -556,10 +557,14 @@ class _MoreScreenState extends State<MoreScreen> {
             Container(
               padding: const EdgeInsets.fromLTRB(20, 50, 20, 30),
               decoration: const BoxDecoration(
-                color: Color(0xFF00796B),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF6817D8), Color(0xFF3422C8), Color(0xFF7A20E8)],
+                ),
                 borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
+                  bottomLeft: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
                 ),
               ),
               child: Row(
@@ -598,14 +603,14 @@ class _MoreScreenState extends State<MoreScreen> {
                                       return const Icon(
                                         Icons.person,
                                         size: 40,
-                                        color: Color(0xFF00796B),
+                                        color: Color(0xFF6817D8),
                                       );
                                     },
                                   )
                                 : const Icon(
                                     Icons.person,
                                     size: 40,
-                                    color: Color(0xFF00796B),
+                                    color: Color(0xFF6817D8),
                                   ),
                           ),
                         ),
@@ -679,8 +684,13 @@ class _MoreScreenState extends State<MoreScreen> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF00796B),
-                              borderRadius: BorderRadius.circular(15),
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF6817D8), Color(0xFF3422C8)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: [BoxShadow(color: Color(0xFF6817D8).withOpacity(.18), blurRadius: 14, offset: Offset(0, 6))],
                             ),
                             child: Row(
                               mainAxisAlignment:
@@ -790,6 +800,16 @@ class _MoreScreenState extends State<MoreScreen> {
                         ],
                       ),
               ),
+            ),
+            _buildMenuTile(
+              Icons.auto_awesome,
+              "উন্নত ফিচারসমূহ",
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AdvancedFeaturesScreen()),
+                );
+              },
             ),
             _buildMenuTile(
               Icons.notifications_none,
