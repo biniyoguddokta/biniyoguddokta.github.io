@@ -878,62 +878,54 @@ class HomeContentState extends State<HomeContent> {
             // ৬. চারটি কার্ড
 
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 15),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: _isLoadingStats
-                  ? const Center(
-                      child: CircularProgressIndicator(),
-                    )
-                  : Row(
+                  ? const Center(child: CircularProgressIndicator())
+                  : GridView.count(
+                      crossAxisCount: 2,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 1.72,
                       children: [
-                        Expanded(
-                          child: _buildInfoCard(
-                            "হাতে নগদ",
-                            "৳ ${cashInHand.toStringAsFixed(0)}",
-                            Icons.account_balance_wallet,
-                            Colors.blue,
-                            isDark,
-                          ),
+                        _buildInfoCard(
+                          "হাতে নগদ",
+                          "৳ ${cashInHand.toStringAsFixed(0)}",
+                          Icons.account_balance_wallet_rounded,
+                          const Color(0xFF2474D2),
+                          isDark,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _buildInfoCard(
-                            "আজকের জমা",
-                            "৳ ${todayDeposit.toStringAsFixed(0)}",
-                            Icons.arrow_downward,
-                            Colors.green,
-                            isDark,
-                          ),
+                        _buildInfoCard(
+                          "আজকের জমা",
+                          "৳ ${todayDeposit.toStringAsFixed(0)}",
+                          Icons.south_west_rounded,
+                          const Color(0xFF159B72),
+                          isDark,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _buildInfoCard(
-                            "আজকের খরচ",
-                            "৳ ${todayExpense.toStringAsFixed(0)}",
-                            Icons.arrow_upward,
-                            Colors.orange,
-                            isDark,
-                          ),
+                        _buildInfoCard(
+                          "আজকের খরচ",
+                          "৳ ${todayExpense.toStringAsFixed(0)}",
+                          Icons.north_east_rounded,
+                          const Color(0xFFE58A32),
+                          isDark,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (c) =>
-                                      const TransactionHistoryScreen(),
-                                ),
-                              );
-                            },
-                            child: _buildInfoCard(
-                              "সব লেনদেন",
-                              "$totalTransactions টি",
-                              Icons.receipt_long,
-                              Colors.red,
-                              isDark,
-                            ),
+                        InkWell(
+                          borderRadius: BorderRadius.circular(18),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (c) => const TransactionHistoryScreen(),
+                              ),
+                            );
+                          },
+                          child: _buildInfoCard(
+                            "সব লেনদেন",
+                            "$totalTransactions টি",
+                            Icons.receipt_long_rounded,
+                            const Color(0xFF8B65C7),
+                            isDark,
                           ),
                         ),
                       ],
@@ -1656,53 +1648,63 @@ class HomeContentState extends State<HomeContent> {
     bool isDark,
   ) {
     return Container(
-      height: 100,
-      padding: const EdgeInsets.symmetric(
-        vertical: 10,
-        horizontal: 5,
-      ),
+      constraints: const BoxConstraints(minHeight: 96),
+      padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 14),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[800] : Colors.white,
-        borderRadius: BorderRadius.circular(15),
+        color: isDark ? const Color(0xFF202B3B) : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark ? Colors.white.withOpacity(0.06) : const Color(0xFFE9EEF5),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 5,
+            color: Colors.black.withOpacity(isDark ? 0.10 : 0.045),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Row(
         children: [
-          CircleAvatar(
-            backgroundColor: color.withOpacity(0.1),
-            child: Icon(
-              icon,
-              color: color,
-              size: 20,
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(14),
             ),
+            child: Icon(icon, color: color, size: 21),
           ),
-          const SizedBox(height: 8),
-          FittedBox(
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 11,
-                color: isDark
-                    ? Colors.white70
-                    : Colors.grey,
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          FittedBox(
-            child: Text(
-              amount,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white70 : const Color(0xFF778397),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    amount,
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : const Color(0xFF172A43),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -1749,7 +1751,14 @@ class HomeContentState extends State<HomeContent> {
           padding: const EdgeInsets.symmetric(vertical: 15),
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(17),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.20),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1785,12 +1794,16 @@ class HomeContentState extends State<HomeContent> {
   ) {
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[800] : Colors.white,
-        borderRadius: BorderRadius.circular(15),
+        color: isDark ? const Color(0xFF202B3B) : Colors.white,
+        borderRadius: BorderRadius.circular(19),
+        border: Border.all(
+          color: isDark ? Colors.white.withOpacity(0.06) : const Color(0xFFE9EEF5),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 5,
+            color: Colors.black.withOpacity(isDark ? 0.10 : 0.035),
+            blurRadius: 13,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -1798,24 +1811,27 @@ class HomeContentState extends State<HomeContent> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            width: 49,
+            height: 49,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: color.withOpacity(0.11),
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 28,
-            ),
+            child: Icon(icon, color: color, size: 25),
           ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white : Colors.black,
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : const Color(0xFF26364B),
+              ),
             ),
           ),
         ],
