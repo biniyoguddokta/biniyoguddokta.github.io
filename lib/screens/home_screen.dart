@@ -214,6 +214,8 @@ class HomeContentState extends State<HomeContent> {
   int pendingMembersCount = 0;
 
   List<dynamic> recentTransactions = [];
+  String _recentTypeFilter = 'সব';
+  String _recentPeriodFilter = 'সাম্প্রতিক ৭ দিন';
 
   List<dynamic> recentInvestments = [];
 
@@ -289,6 +291,35 @@ class HomeContentState extends State<HomeContent> {
     if (hour >= 18 && hour < 20) return "শুভ সন্ধ্যা";
 
     return "শুভ রাত্রি";
+  }
+
+  // Recent transaction date parser supports API ISO dates and display-style dates.
+  DateTime? _parseRecentTransactionDate(dynamic tx) {
+    final raw = (tx is Map ? tx['Date'] : null)?.toString().trim() ?? '';
+    if (raw.isEmpty || raw.toLowerCase() == 'null') return null;
+
+    final isoDate = DateTime.tryParse(raw);
+    if (isoDate != null) return isoDate;
+
+    const patterns = [
+      'yyyy-MM-dd HH:mm:ss',
+      'yyyy-MM-dd HH:mm',
+      'dd MMM, yyyy • hh:mm a',
+      'dd MMM yyyy • hh:mm a',
+      'dd MMM, yyyy hh:mm a',
+      'dd MMM yyyy hh:mm a',
+      'dd/MM/yyyy',
+      'dd-MM-yyyy',
+    ];
+
+    for (final pattern in patterns) {
+      try {
+        return DateFormat(pattern, 'en').parseStrict(raw);
+      } catch (_) {
+        // Try the next known date format.
+      }
+    }
+    return null;
   }
 
   // ================= DASHBOARD DATA =================
@@ -467,12 +498,17 @@ class HomeContentState extends State<HomeContent> {
           return status == 'Paid';
         }).toList();
 
-        if (paidTransactions.length > 5) {
-          tempRecent = paidTransactions.sublist(paidTransactions.length - 5).reversed.toList();
-        } else {
-          tempRecent = paidTransactions.reversed.toList();
-        }
-        // 🔥 নতুন কোড শেষ 🔥
+        // Keep the newest successful transactions for the dashboard filters.
+        // This changes only the dashboard preview list, not the transaction records.
+        paidTransactions.sort((a, b) {
+          final dateA = _parseRecentTransactionDate(a) ??
+              DateTime.fromMillisecondsSinceEpoch(0);
+          final dateB = _parseRecentTransactionDate(b) ??
+              DateTime.fromMillisecondsSinceEpoch(0);
+          return dateB.compareTo(dateA);
+        });
+        tempRecent = paidTransactions.take(100).toList();
+        // 🔥 সাম্প্রতিক লেনদেনের ডেটা প্রস্তুত 🔥
 
         setState(() {
           cashInHand = tempCash;
@@ -712,6 +748,491 @@ class HomeContentState extends State<HomeContent> {
 
   // ================= BUILD =================
 
+  List<dynamic> get _filteredRecentTransactions {
+    final now = DateTime.now();
+    final startOfToday = DateTime(now.year, now.month, now.day);
+
+    return recentTransactions.where((tx) {
+      final rawType = (tx is Map ? tx['Type'] : null)?.toString().trim() ?? '';
+      final normalizedType = rawType.replaceAll('য়', 'য়');
+      final selectedType = _recentTypeFilter.replaceAll('য়', 'য়');
+
+      if (_recentTypeFilter != 'সব' && normalizedType != selectedType) {
+        return false;
+      }
+
+      if (_recentPeriodFilter != 'সব সময়') {
+        final date = _parseRecentTransactionDate(tx);
+        if (date == null) return false;
+
+        final days = _recentPeriodFilter == 'সাম্প্রতিক ৭ দিন' ? 7 : 30;
+        final firstIncludedDay = startOfToday.subtract(
+          Duration(days: days - 1),
+        );
+        if (date.isBefore(firstIncludedDay)) return false;
+      }
+
+      return true;
+    }).take(4).toList();
+  }
+
+  Color _recentTransactionColor(String type) {
+    final normalized = type.replaceAll('য়', 'য়');
+    switch (normalized) {
+      case 'জমা':
+      case 'আয়':
+      case 'বিলম্ব ফী':
+        return const Color(0xFF079B25);
+      case 'খরচ':
+        return const Color(0xFFE51C23);
+      case 'বিনিয়োগ':
+        return const Color(0xFF6817D8);
+      default:
+        return const Color(0xFF1768D5);
+    }
+  }
+
+  IconData _recentTransactionIcon(String type) {
+    final normalized = type.replaceAll('য়', 'য়');
+    switch (normalized) {
+      case 'জমা':
+        return Icons.south_rounded;
+      case 'খরচ':
+        return Icons.shopping_cart_rounded;
+      case 'আয়':
+        return Icons.savings_rounded;
+      case 'বিনিয়োগ':
+        return Icons.trending_up_rounded;
+      case 'বিলম্ব ফী':
+        return Icons.warning_amber_rounded;
+      default:
+        return Icons.receipt_long_rounded;
+    }
+  }
+
+  Widget _buildRecentTransactions(bool isDark) {
+    const purple = Color(0xFF6515E8);
+    const navy = Color(0xFF171B50);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final compact = screenWidth < 390;
+    final cardColor = isDark ? const Color(0xFF202033) : Colors.white;
+    final muted = isDark ? Colors.white60 : const Color(0xFF62558F);
+    final visibleTransactions = _filteredRecentTransactions;
+
+    Widget buildTypeChip(String label) {
+      final selected = _recentTypeFilter == label;
+      return Padding(
+        padding: const EdgeInsets.only(right: 7),
+        child: ChoiceChip(
+          label: Text(label),
+          selected: selected,
+          showCheckmark: false,
+          onSelected: (_) {
+            setState(() => _recentTypeFilter = label);
+          },
+          labelStyle: TextStyle(
+            color: selected
+                ? Colors.white
+                : (isDark ? Colors.white70 : navy),
+            fontSize: compact ? 12 : 13,
+            fontWeight: FontWeight.w800,
+          ),
+          selectedColor: purple,
+          backgroundColor:
+              isDark ? Colors.white10 : const Color(0xFFEDE5FF),
+          side: BorderSide(
+            color: selected ? purple : const Color(0xFFDCD0FA),
+          ),
+          shape: const StadiumBorder(),
+          elevation: selected ? 3 : 0,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+        ),
+      );
+    }
+
+    final dateSelector = PopupMenuButton<String>(
+      tooltip: 'তারিখ অনুযায়ী লেনদেন দেখুন',
+      initialValue: _recentPeriodFilter,
+      onSelected: (value) {
+        setState(() => _recentPeriodFilter = value);
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem(
+          value: 'সাম্প্রতিক ৭ দিন',
+          child: Text('সাম্প্রতিক ৭ দিন'),
+        ),
+        PopupMenuItem(
+          value: 'সাম্প্রতিক ৩০ দিন',
+          child: Text('সাম্প্রতিক ৩০ দিন'),
+        ),
+        PopupMenuItem(
+          value: 'সব সময়',
+          child: Text('সব সময়'),
+        ),
+      ],
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: compact ? 10 : 13,
+          vertical: 9,
+        ),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.white10 : const Color(0xFFEDE5FF),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: isDark ? Colors.white12 : const Color(0xFFDCD0FA),
+          ),
+          boxShadow: isDark
+              ? const []
+              : [
+                  BoxShadow(
+                    color: purple.withOpacity(.10),
+                    blurRadius: 7,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.calendar_month_rounded,
+              color: purple,
+              size: compact ? 17 : 19,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              _recentPeriodFilter,
+              style: TextStyle(
+                color: isDark ? Colors.white : navy,
+                fontSize: compact ? 11 : 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(width: 2),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              color: isDark ? Colors.white70 : navy,
+              size: 19,
+            ),
+          ],
+        ),
+      ),
+    );
+
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.fromLTRB(15, 4, 15, compact ? 12 : 14),
+      padding: EdgeInsets.fromLTRB(
+        compact ? 11 : 14,
+        compact ? 11 : 13,
+        compact ? 11 : 14,
+        8,
+      ),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(25),
+        border: Border.all(
+          color: isDark ? Colors.white12 : const Color(0xFFE7DDFB),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: purple.withOpacity(isDark ? .10 : .13),
+            blurRadius: 17,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Purple history header and the existing full-history navigation.
+          Row(
+            children: [
+              Container(
+                width: compact ? 42 : 46,
+                height: compact ? 42 : 46,
+                decoration: BoxDecoration(
+                  color: purple.withOpacity(.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.history_rounded,
+                  color: purple,
+                  size: 29,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'সাম্প্রতিক লেনদেন',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : navy,
+                    fontSize: compact ? 17 : 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 5),
+              TextButton(
+                style: TextButton.styleFrom(
+                  backgroundColor: purple,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: compact ? 11 : 15,
+                    vertical: compact ? 8 : 10,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: const StadiumBorder(),
+                  elevation: 3,
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const TransactionHistoryScreen(),
+                    ),
+                  );
+                },
+                child: Text(
+                  'সব দেখুন  →',
+                  style: TextStyle(
+                    fontSize: compact ? 12 : 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: compact ? 9 : 11),
+
+          // Horizontal category chips; date selector stays visible on narrow phones.
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: [
+                buildTypeChip('সব'),
+                buildTypeChip('জমা'),
+                buildTypeChip('খরচ'),
+                buildTypeChip('আয়'),
+                buildTypeChip('বিনিয়োগ'),
+              ],
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 3, bottom: 5),
+              child: dateSelector,
+            ),
+          ),
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: isDark ? Colors.white12 : const Color(0xFFEAE3F8),
+          ),
+
+          if (_isLoadingStats && recentTransactions.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 22),
+              child: Center(
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: purple,
+                ),
+              ),
+            )
+          else if (visibleTransactions.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 22),
+              child: Text(
+                'এই ফিল্টারে কোনো পরিশোধিত লেনদেন নেই',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: muted,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            )
+          else
+            ...visibleTransactions.map((tx) {
+              final type =
+                  (tx['Type'] ?? 'লেনদেন').toString().trim();
+              final member =
+                  (tx['MemberName'] ?? 'নাম উল্লেখ নেই').toString();
+              final note = (tx['Note'] ?? '').toString().trim();
+              final date = _parseRecentTransactionDate(tx);
+              final color = _recentTransactionColor(type);
+              final normalizedType = type.replaceAll('য়', 'য়');
+              final isPositive = const [
+                'জমা',
+                'আয়',
+                'বিলম্ব ফী',
+              ].contains(normalizedType);
+              final amount = double.tryParse(
+                    (tx['Amount'] ?? '0')
+                        .toString()
+                        .replaceAll(',', '')
+                        .replaceAll('৳', '')
+                        .trim(),
+                  ) ??
+                  0;
+              final dateText = date == null
+                  ? (tx['Date'] ?? 'তারিখ নেই').toString()
+                  : DateFormat('dd MMM, yyyy • hh:mm a', 'en')
+                      .format(date);
+              final detailText = note.isNotEmpty ? note : member;
+
+              return Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(13),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TransactionHistoryScreen(),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    constraints: BoxConstraints(
+                      minHeight: compact ? 68 : 74,
+                    ),
+                    padding: EdgeInsets.symmetric(
+                      vertical: compact ? 7 : 8,
+                      horizontal: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: isDark
+                              ? Colors.white10
+                              : const Color(0xFFECE6F8),
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: compact ? 47 : 53,
+                          height: compact ? 47 : 53,
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(.13),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: color.withOpacity(.08),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            _recentTransactionIcon(type),
+                            color: color,
+                            size: compact ? 24 : 28,
+                          ),
+                        ),
+                        SizedBox(width: compact ? 8 : 11),
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                type,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: color,
+                                  fontSize: compact ? 14 : 16,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                '$detailText | $dateText',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: muted,
+                                  fontSize: compact ? 9.5 : 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: compact ? 4 : 7),
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxWidth: compact ? 104 : 132,
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  '${isPositive ? '+' : '-'} ৳ ${NumberFormat('#,##0').format(amount)}',
+                                  maxLines: 1,
+                                  style: TextStyle(
+                                    color: isPositive
+                                        ? const Color(0xFF079B25)
+                                        : const Color(0xFFE51C23),
+                                    fontSize: compact ? 13 : 16,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: compact ? 9 : 12,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF19C878)
+                                      .withOpacity(.15),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  'Paid',
+                                  style: TextStyle(
+                                    color: const Color(0xFF078A43),
+                                    fontSize: compact ? 10 : 11,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          color: isDark ? Colors.white70 : navy,
+                          size: compact ? 21 : 25,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     bool isDark =
@@ -834,8 +1355,27 @@ class HomeContentState extends State<HomeContent> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE53935),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF172B4D),
+                      Color(0xFF0B1426),
+                      Color(0xFF263A5B),
+                    ],
+                  ),
                   borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: const Color(0xFF526B91).withOpacity(.55),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF0B1426).withOpacity(.22),
+                      blurRadius: 12,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
                 ),
                 child: Row(
                   children: [
@@ -1199,86 +1739,8 @@ class HomeContentState extends State<HomeContent> {
 
             const SizedBox(height: 30),
 
-            // ৯. সাম্প্রতিক লেনদেন
-
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 15),
-              child: Text(
-                "সাম্প্রতিক লেনদেন",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 15),
-
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 15),
-              child: recentTransactions.isEmpty
-                  ? const Center(
-                      child: Text("কোনো লেনদেন নেই"),
-                    )
-                  : Column(
-                      children:
-                          recentTransactions.map((tx) {
-                        bool isDeposit =
-                            tx['Type'] == 'জমা';
-
-                        return Card(
-                          color: isDark
-                              ? Colors.grey[800]
-                              : Colors.white,
-                          margin: const EdgeInsets.only(
-                            bottom: 10,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(12),
-                          ),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: isDeposit
-                                  ? Colors.green.withOpacity(0.1)
-                                  : Colors.red.withOpacity(0.1),
-                              child: Icon(
-                                isDeposit
-                                    ? Icons.arrow_downward
-                                    : Icons.arrow_upward,
-                                color: isDeposit
-                                    ? Colors.green
-                                    : Colors.red,
-                              ),
-                            ),
-                            title: Text(
-                              tx['Type'].toString(),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: isDeposit
-                                    ? Colors.green
-                                    : Colors.red,
-                              ),
-                            ),
-                            subtitle: Text(
-                              "${tx['MemberName']} | ${tx['Date'].toString().split(' ')[0]}",
-                            ),
-                            trailing: Text(
-                              "৳ ${tx['Amount']}",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: isDeposit
-                                    ? Colors.green
-                                    : Colors.red,
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-            ),
+            // ৯. Premium Recent Transactions — existing history screen retained.
+            _buildRecentTransactions(isDark),
 
             const SizedBox(height: 30),
 
