@@ -75,6 +75,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
         type == 'জমা' && (status == 'paid' || status == 'পরিশোধিত');
   }).toList().reversed.toList();
 
+  List<dynamic> _depositsOn(DateTime date) => _monthDeposits.where((tx) =>
+      (tx['Date'] ?? '').toString().split(' ').first == _dateKey(date)).toList();
+
   bool _hasPaid(String memberName) => _monthDeposits.any((tx) =>
       (tx['MemberName'] ?? '').toString().trim().toLowerCase() ==
       memberName.trim().toLowerCase());
@@ -213,7 +216,10 @@ class _CollectionScreenState extends State<CollectionScreen> {
             borderRadius: BorderRadius.circular(12),
             border: isToday && !selected ? Border.all(color: _purple.withOpacity(.5)) : null,
           ),
-          child: Center(child: Text('$day', style: TextStyle(fontWeight: selected || isToday ? FontWeight.w800 : FontWeight.w500, color: selected ? Colors.white : const Color(0xFF263247)))),
+          child: Stack(alignment: Alignment.center, children: [
+            Center(child: Text('$day', style: TextStyle(fontWeight: selected || isToday ? FontWeight.w800 : FontWeight.w500, color: selected ? Colors.white : const Color(0xFF263247)))),
+            if (_depositsOn(date).isNotEmpty) Positioned(bottom: 5, child: Container(width: 5, height: 5, decoration: BoxDecoration(color: selected ? Colors.white : _green, shape: BoxShape.circle))),
+          ]),
         ),
       ));
     }
@@ -230,7 +236,10 @@ class _CollectionScreenState extends State<CollectionScreen> {
           IconButton(onPressed: () => _moveMonth(1), icon: const Icon(Icons.chevron_right_rounded)),
         ]),
         GridView.count(crossAxisCount: 7, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), children: cells),
-        Align(alignment: Alignment.centerLeft, child: Text('নির্বাচিত তারিখ: ${DateFormat('dd/MM/yyyy').format(_selectedDate)}', style: const TextStyle(fontSize: 12, color: Colors.black54))),
+        Align(alignment: Alignment.centerLeft, child: Wrap(spacing: 12, crossAxisAlignment: WrapCrossAlignment.center, children: [
+          Text('নির্বাচিত তারিখ: ${DateFormat('dd/MM/yyyy').format(_selectedDate)}', style: const TextStyle(fontSize: 12, color: Colors.black54)),
+          Row(mainAxisSize: MainAxisSize.min, children: [Container(width: 6, height: 6, decoration: const BoxDecoration(color: _green, shape: BoxShape.circle)), const SizedBox(width: 5), const Text('জমা সম্পন্ন', style: TextStyle(fontSize: 11, color: Colors.black54))]),
+        ])),
       ]),
     );
   }
@@ -276,6 +285,17 @@ class _CollectionScreenState extends State<CollectionScreen> {
                     ),
                     const SizedBox(height: 16),
                     _calendar(),
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFE8E2F4))),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Row(children: [const Expanded(child: Text('নির্বাচিত দিনের জমাদাতা', style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF263247)))), Text('${_depositsOn(_selectedDate).length} জন', style: const TextStyle(color: _green, fontWeight: FontWeight.w800))]),
+                        const SizedBox(height: 8),
+                        if (_depositsOn(_selectedDate).isEmpty) const Text('এই দিনে কোনো জমা রেকর্ড নেই', style: TextStyle(color: Colors.black45, fontSize: 12))
+                        else Wrap(spacing: 7, runSpacing: 7, children: _depositsOn(_selectedDate).map((tx) => Chip(avatar: const Icon(Icons.check_circle, color: _green, size: 16), label: Text((tx['MemberName'] ?? 'সদস্য').toString()), backgroundColor: const Color(0xFFEAF8F0), side: BorderSide.none, visualDensity: VisualDensity.compact)).toList()),
+                      ]),
+                    ),
                     const SizedBox(height: 18),
                     const Text('সদস্যের জমা গ্রহণ', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xFF263247))),
                     const SizedBox(height: 10),
