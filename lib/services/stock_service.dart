@@ -169,7 +169,7 @@ class StockService {
     try {
       final response = await _postRedirectSafe(
         _actionUri(action),
-        const {'Content-Type': 'application/json'},
+        const {'Content-Type': 'text/plain;charset=utf-8'},
         jsonEncode(body),
       );
       final result = _decodeResponse(response);
