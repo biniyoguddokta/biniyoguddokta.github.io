@@ -80,9 +80,12 @@ class StockController extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Server save response is authoritative. A later GET refresh can fail
+      // independently (e.g. transient Apps Script read/network issue); do not
+      // report a successfully persisted write as a failed save.
       await operation();
       await _afterSave();
-      return _errorMessage == null;
+      return true;
     } catch (error) {
       _errorMessage = _readableError(error);
       return false;
