@@ -501,24 +501,212 @@ class HomeContentState extends State<HomeContent> {
     final titleColor = isDark ? Colors.white : const Color(0xFF252642);
     final muted = isDark ? Colors.white60 : Colors.black54;
     final card = isDark ? const Color(0xFF1E1E2B) : Colors.white;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 15),
       padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(color: card, borderRadius: BorderRadius.circular(20), border: Border.all(color: isDark ? Colors.white12 : const Color(0xFFE8E7F3)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? .08 : .035), blurRadius: 14, offset: const Offset(0, 4))]),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [Container(width: 38, height: 38, decoration: BoxDecoration(color: const Color(0xFF5146A5).withOpacity(.11), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.trending_up_rounded, color: Color(0xFF5146A5))), const SizedBox(width: 10), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('সাম্প্রতিক বিনিয়োগ', style: TextStyle(color: titleColor, fontSize: 16, fontWeight: FontWeight.w900)), Text('সর্বশেষ যুক্ত হওয়া প্রজেক্ট', style: TextStyle(color: muted, fontSize: 11))])), TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => InvestmentScreen(userRole: userRole))), child: const Text('সব দেখুন'))]),
-        const SizedBox(height: 8),
-        if (_isLoadingStats && recentInvestments.isEmpty) const Padding(padding: EdgeInsets.all(18), child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
-        else if (recentInvestments.isEmpty) Padding(padding: const EdgeInsets.symmetric(vertical: 15), child: Text('এখনো কোনো বিনিয়োগের তথ্য পাওয়া যায়নি', style: TextStyle(color: muted, fontSize: 13)))
-        else ...recentInvestments.map((investment) {
-          final project = (investment['ProjectName'] ?? 'নাম উল্লেখ নেই').toString();
-          final sector = (investment['Sector'] ?? '').toString();
-          final amount = double.tryParse('${investment['InvestAmount'] ?? 0}'.replaceAll(',', '')) ?? 0;
-          final status = (investment['Status'] ?? 'অজানা').toString();
-          final active = status == 'সক্রিয়';
-          return Container(margin: const EdgeInsets.only(top: 9), padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(.035) : const Color(0xFFF8F7FD), borderRadius: BorderRadius.circular(15), border: Border.all(color: isDark ? Colors.white10 : const Color(0xFFECEAF6))), child: Row(children: [Container(width: 42, height: 42, decoration: BoxDecoration(color: const Color(0xFF5146A5).withOpacity(.11), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.business_center_rounded, color: Color(0xFF5146A5))), const SizedBox(width: 11), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(project, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: titleColor, fontWeight: FontWeight.w800, fontSize: 13)), if (sector.isNotEmpty) Text(sector, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: muted, fontSize: 11)), const SizedBox(height: 4), Text(status, style: TextStyle(color: active ? const Color(0xFF15945E) : const Color(0xFF7468C7), fontSize: 10, fontWeight: FontWeight.w700))])), const SizedBox(width: 8), Text('৳ ${NumberFormat('#,##0.##').format(amount)}', style: TextStyle(color: titleColor, fontWeight: FontWeight.w900, fontSize: 13))]));
-        }),
-      ]),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: isDark ? Colors.white12 : const Color(0xFFE8E7F3),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? .08 : .035),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF5146A5).withOpacity(.11),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: const Icon(
+                  Icons.trending_up_rounded,
+                  color: Color(0xFF5146A5),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'সাম্প্রতিক বিনিয়োগ',
+                      style: TextStyle(
+                        color: titleColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      'সর্বশেষ যুক্ত হওয়া প্রজেক্ট',
+                      style: TextStyle(color: muted, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => InvestmentScreen(userRole: userRole),
+                  ),
+                ),
+                child: const Text('সব দেখুন'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (_isLoadingStats && recentInvestments.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(18),
+              child: Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else if (recentInvestments.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 15),
+              child: Text(
+                'এখনো কোনো বিনিয়োগের তথ্য পাওয়া যায়নি',
+                style: TextStyle(color: muted, fontSize: 13),
+              ),
+            )
+          else
+            ...recentInvestments.map((investment) {
+              final project =
+                  (investment['ProjectName'] ?? 'নাম উল্লেখ নেই').toString();
+              final sector = (investment['Sector'] ?? '').toString();
+              final amount = double.tryParse(
+                    '${investment['InvestAmount'] ?? 0}'.replaceAll(',', ''),
+                  ) ??
+                  0;
+              final status = (investment['Status'] ?? 'অজানা').toString();
+              final active = status == 'সক্রিয়';
+
+              return Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(top: 9),
+                padding: const EdgeInsets.all(13),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white.withOpacity(.035)
+                      : const Color(0xFFF8F7FD),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark
+                        ? Colors.white10
+                        : const Color(0xFFECEAF6),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF5146A5).withOpacity(.11),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.business_center_rounded,
+                            color: Color(0xFF5146A5),
+                          ),
+                        ),
+                        const SizedBox(width: 11),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                project,
+                                softWrap: true,
+                                style: TextStyle(
+                                  color: titleColor,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14,
+                                  height: 1.35,
+                                ),
+                              ),
+                              if (sector.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  sector,
+                                  softWrap: true,
+                                  style: TextStyle(
+                                    color: muted,
+                                    fontSize: 11,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 11),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: active
+                                ? const Color(0xFFE7F6EE)
+                                : const Color(0xFFEDEBFA),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            status,
+                            style: TextStyle(
+                              color: active
+                                  ? const Color(0xFF15945E)
+                                  : const Color(0xFF7468C7),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'বিনিয়োগ',
+                          style: TextStyle(color: muted, fontSize: 11),
+                        ),
+                        const SizedBox(width: 7),
+                        Text(
+                          '৳ ${NumberFormat('#,##0.##').format(amount)}',
+                          style: TextStyle(
+                            color: titleColor,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            }),
+        ],
+      ),
     );
   }
 
@@ -567,7 +755,7 @@ class HomeContentState extends State<HomeContent> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('সমিতি বিনিয়োগ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF17233B))),
+                        Text('বিনিয়োগ উদ্যোক্তা', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: isDark ? Colors.white : const Color(0xFF17233B))),
                         Text('স্মার্ট বিনিয়োগ, সমৃদ্ধ ভবিষ্যৎ', style: TextStyle(fontSize: 11, color: isDark ? Colors.white60 : Colors.black54)),
                       ],
                     ),
@@ -626,7 +814,8 @@ class HomeContentState extends State<HomeContent> {
 
             // ৪. বকেয়া বক্স
 
-            InkWell(
+            if (DateTime.now().day >= 16 && pendingMembersCount > 0)
+              InkWell(
               onTap: () {
                 Navigator.push(
                   context,
