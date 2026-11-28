@@ -162,8 +162,38 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
   @override
   Widget build(BuildContext context) {
     final filtered = investments.where((inv) => (inv['Status'] ?? 'সক্রিয়').toString() == selectedTab).toList();
-    final total = investments.fold<double>(0, (sum, item) => sum + (double.tryParse('${item['InvestAmount'] ?? 0}'.replaceAll(',', '')) ?? 0));
-    final profit = investments.fold<double>(0, (sum, item) => sum + (double.tryParse('${item['ProfitAmount'] ?? 0}'.replaceAll(',', '')) ?? 0));
+    final projectInvestment = investments.fold<double>(
+      0,
+      (sum, item) => sum +
+          (double.tryParse('${item['InvestAmount'] ?? 0}'.replaceAll(',', '')) ?? 0),
+    );
+    // কিস্তির পণ্যে বিনিয়োগ হিসেবে ক্রয়মূল্য (CostPrice) গণনা হবে;
+    // বিক্রয়মূল্যকে বিনিয়োগ হিসেবে দেখানো হবে না।
+    final installmentInvestment = installmentContracts.fold<double>(
+      0,
+      (sum, contract) => sum +
+          (double.tryParse('${contract['CostPrice'] ?? 0}'.replaceAll(',', '')) ?? 0),
+    );
+    final total = projectInvestment + installmentInvestment;
+    final projectProfit = investments.fold<double>(
+      0,
+      (sum, item) => sum +
+          (double.tryParse('${item['ProfitAmount'] ?? 0}'.replaceAll(',', '')) ?? 0),
+    );
+    final installmentProfit = installmentContracts.fold<double>(
+      0,
+      (sum, contract) {
+        final sale = double.tryParse('${contract['SalePrice'] ?? 0}'.replaceAll(',', '')) ?? 0;
+        final cost = double.tryParse('${contract['CostPrice'] ?? 0}'.replaceAll(',', '')) ?? 0;
+        return sum + (sale - cost).clamp(0, double.infinity);
+      },
+    );
+    final profit = projectProfit + installmentProfit;
+    final activeInstallments = installmentContracts.where((c) {
+      final status = (c['Status'] ?? 'চলমান').toString().trim();
+      return !['সম্পন্ন', 'বাতিল', 'cancelled', 'completed'].contains(status.toLowerCase());
+    }).length;
+    final completedInstallments = installmentContracts.length - activeInstallments;
     final isAdmin = widget.userRole.trim().toLowerCase() == 'admin';
     final money = NumberFormat('#,##0.##');
 
@@ -196,11 +226,11 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
                       Text('৳ ${money.format(total)}', style: const TextStyle(color: Colors.white, fontSize: 29, fontWeight: FontWeight.w900)),
                       const SizedBox(height: 14),
                       Row(children: [
-                        _heroMetric('${investments.length}', 'মোট প্রজেক্ট'),
+                        _heroMetric('${investments.length + installmentContracts.length}', 'মোট বিনিয়োগ'),
                         const SizedBox(width: 22),
-                        _heroMetric('${investments.where((e) => (e['Status'] ?? '') == 'সক্রিয়').length}', 'চলমান'),
+                        _heroMetric('${investments.where((e) => (e['Status'] ?? '') == 'সক্রিয়').length + activeInstallments}', 'চলমান'),
                         const SizedBox(width: 22),
-                        _heroMetric('${investments.where((e) => (e['Status'] ?? '') == 'সম্পন্ন').length}', 'সম্পন্ন'),
+                        _heroMetric('${investments.where((e) => (e['Status'] ?? '') == 'সম্পন্ন').length + completedInstallments}', 'সম্পন্ন'),
                       ]),
                     ]),
                   ),
@@ -275,73 +305,7 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
       margin: const EdgeInsets.only(bottom: 11), padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFFE9E9F2)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(.025), blurRadius: 10, offset: const Offset(0, 3))]),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                color: const Color(0xFF5146A5).withOpacity(.09),
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: const Icon(
-                Icons.business_center_rounded,
-                color: Color(0xFF5146A5),
-              ),
-            ),
-            const SizedBox(width: 11),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    (inv['ProjectName'] ?? 'নাম উল্লেখ নেই').toString(),
-                    softWrap: true,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 15,
-                      height: 1.35,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    (inv['Sector'] ?? 'বিনিয়োগ প্রকল্প').toString(),
-                    softWrap: true,
-                    style: const TextStyle(
-                      color: Colors.black54,
-                      fontSize: 12,
-                      height: 1.3,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 9),
-        Align(
-          alignment: Alignment.centerRight,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: active
-                  ? const Color(0xFFE7F6EE)
-                  : const Color(0xFFEDEBFA),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              status,
-              style: TextStyle(
-                color: active
-                    ? const Color(0xFF16865A)
-                    : const Color(0xFF5146A5),
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ),
+        Row(children: [Container(width: 42, height: 42, decoration: BoxDecoration(color: const Color(0xFF5146A5).withOpacity(.09), borderRadius: BorderRadius.circular(13)), child: const Icon(Icons.business_center_rounded, color: Color(0xFF5146A5))), const SizedBox(width: 11), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text((inv['ProjectName'] ?? 'নাম উল্লেখ নেই').toString(), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)), const SizedBox(height: 3), Text((inv['Sector'] ?? 'বিনিয়োগ প্রকল্প').toString(), style: const TextStyle(color: Colors.black54, fontSize: 12))])), Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: active ? const Color(0xFFE7F6EE) : const Color(0xFFEDEBFA), borderRadius: BorderRadius.circular(20)), child: Text(status, style: TextStyle(color: active ? const Color(0xFF16865A) : const Color(0xFF5146A5), fontSize: 11, fontWeight: FontWeight.w700)))]),
         const SizedBox(height: 14), Row(children: [Expanded(child: _projectValue('বিনিয়োগ', '৳ ${money.format(amount)}')), Expanded(child: _projectValue('সম্ভাব্য লাভ', '৳ ${money.format(expectedProfit)}'))]),
         const SizedBox(height: 12), const Divider(height: 1), const SizedBox(height: 8),
         Row(children: [Expanded(child: Text('${inv['StartDate'] ?? '—'}  →  ${inv['EndDate'] ?? '—'}', style: const TextStyle(color: Colors.black54, fontSize: 11))), if (isAdmin && active) TextButton.icon(onPressed: () => _showCompleteDialog((inv['RowIndex'] ?? '').toString(), (inv['ProfitAmount'] ?? '0').toString()), icon: const Icon(Icons.check_circle_outline, size: 17), label: const Text('সম্পন্ন')), if (isAdmin) IconButton(tooltip: 'প্রজেক্ট ডিলেট', onPressed: () => _confirmDelete(inv), icon: const Icon(Icons.delete_outline_rounded, color: Colors.red))]),
@@ -354,8 +318,11 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
 
   Widget _buildInstallmentInvestmentCard(Map<String, dynamic> contract) {
     final sale = num.tryParse((contract['SalePrice'] ?? '0').toString()) ?? 0;
+    final cost = num.tryParse((contract['CostPrice'] ?? '0').toString()) ?? 0;
+    final expectedProfit = (sale - cost).clamp(0, double.infinity);
     final down = num.tryParse((contract['DownPayment'] ?? '0').toString()) ?? 0;
     final months = num.tryParse((contract['Months'] ?? '0').toString()) ?? 0;
+    final money = NumberFormat('#,##0.##');
     final contractId = (contract['ContractID'] ?? '').toString();
     return Card(
       color: Colors.white,
@@ -377,8 +344,14 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
           ]),
           const SizedBox(height: 7),
           Text('ক্রেতা: ${(contract['MemberName'] ?? '').toString()}'),
-          Text('বিক্রয়মূল্য: ৳ ${sale.toStringAsFixed(0)}  •  মেয়াদ: ${months.toStringAsFixed(0)} মাস'),
-          Text('ডাউনপেমেন্ট: ৳ ${down.toStringAsFixed(0)}'),
+          const SizedBox(height: 8),
+          Row(children: [
+            Expanded(child: _projectValue('পণ্যের বিনিয়োগ', '৳ ${money.format(cost)}')),
+            Expanded(child: _projectValue('সম্ভাব্য লাভ', '৳ ${money.format(expectedProfit)}')),
+          ]),
+          const SizedBox(height: 6),
+          Text('বিক্রয়মূল্য: ৳ ${money.format(sale)}  •  মেয়াদ: ${months.toStringAsFixed(0)} মাস'),
+          Text('ডাউনপেমেন্ট: ৳ ${money.format(down)}'),
         ]),
       ),
     );
