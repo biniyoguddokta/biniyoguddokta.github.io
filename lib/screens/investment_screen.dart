@@ -275,7 +275,73 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
       margin: const EdgeInsets.only(bottom: 11), padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFFE9E9F2)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(.025), blurRadius: 10, offset: const Offset(0, 3))]),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [Container(width: 42, height: 42, decoration: BoxDecoration(color: const Color(0xFF5146A5).withOpacity(.09), borderRadius: BorderRadius.circular(13)), child: const Icon(Icons.business_center_rounded, color: Color(0xFF5146A5))), const SizedBox(width: 11), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text((inv['ProjectName'] ?? 'নাম উল্লেখ নেই').toString(), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)), const SizedBox(height: 3), Text((inv['Sector'] ?? 'বিনিয়োগ প্রকল্প').toString(), style: const TextStyle(color: Colors.black54, fontSize: 12))])), Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: active ? const Color(0xFFE7F6EE) : const Color(0xFFEDEBFA), borderRadius: BorderRadius.circular(20)), child: Text(status, style: TextStyle(color: active ? const Color(0xFF16865A) : const Color(0xFF5146A5), fontSize: 11, fontWeight: FontWeight.w700)))]),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: const Color(0xFF5146A5).withOpacity(.09),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: const Icon(
+                Icons.business_center_rounded,
+                color: Color(0xFF5146A5),
+              ),
+            ),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    (inv['ProjectName'] ?? 'নাম উল্লেখ নেই').toString(),
+                    softWrap: true,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    (inv['Sector'] ?? 'বিনিয়োগ প্রকল্প').toString(),
+                    softWrap: true,
+                    style: const TextStyle(
+                      color: Colors.black54,
+                      fontSize: 12,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 9),
+        Align(
+          alignment: Alignment.centerRight,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: active
+                  ? const Color(0xFFE7F6EE)
+                  : const Color(0xFFEDEBFA),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              status,
+              style: TextStyle(
+                color: active
+                    ? const Color(0xFF16865A)
+                    : const Color(0xFF5146A5),
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
         const SizedBox(height: 14), Row(children: [Expanded(child: _projectValue('বিনিয়োগ', '৳ ${money.format(amount)}')), Expanded(child: _projectValue('সম্ভাব্য লাভ', '৳ ${money.format(expectedProfit)}'))]),
         const SizedBox(height: 12), const Divider(height: 1), const SizedBox(height: 8),
         Row(children: [Expanded(child: Text('${inv['StartDate'] ?? '—'}  →  ${inv['EndDate'] ?? '—'}', style: const TextStyle(color: Colors.black54, fontSize: 11))), if (isAdmin && active) TextButton.icon(onPressed: () => _showCompleteDialog((inv['RowIndex'] ?? '').toString(), (inv['ProfitAmount'] ?? '0').toString()), icon: const Icon(Icons.check_circle_outline, size: 17), label: const Text('সম্পন্ন')), if (isAdmin) IconButton(tooltip: 'প্রজেক্ট ডিলেট', onPressed: () => _confirmDelete(inv), icon: const Icon(Icons.delete_outline_rounded, color: Colors.red))]),
