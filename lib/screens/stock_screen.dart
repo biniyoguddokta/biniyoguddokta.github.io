@@ -546,7 +546,7 @@ class _StockScreenState extends State<StockScreen>
                       PopupMenuItem(value: 'edit', child: Text('সম্পাদনা')),
                       PopupMenuItem(value: 'move', child: Text('লোকেশন বদল')),
                       PopupMenuItem(value: 'reserve', child: Text('স্টক সংরক্ষণ')),
-                      PopupMenuItem(value: 'archive', child: Text('আর্কাইভ')),
+                      PopupMenuItem(value: 'archive', child: Text('ডিলেট / আর্কাইভ')), 
                     ],
                   ),
                 ],
@@ -931,10 +931,14 @@ class _StockScreenState extends State<StockScreen>
           subtitle: Text(
             '${transaction.referenceNumber} • ${_date(transaction.date)} • ${transaction.paymentStatus}',
           ),
-          trailing: Text(
-            '৳${_money(transaction.totalAmount)}',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
+          trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+            Text('৳${_money(transaction.totalAmount)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+            PopupMenuButton<String>(
+              tooltip: 'বিকল্প',
+              onSelected: (value) { if (value == 'archive') _archiveStockRecord('transactions', transaction.id, 'লেনদেন ডিলেট/আর্কাইভ'); },
+              itemBuilder: (_) => const [PopupMenuItem(value: 'archive', child: Text('ডিলেট / আর্কাইভ'))],
+            ),
+          ]),
         ),
       );
 
@@ -1333,6 +1337,12 @@ class _StockScreenState extends State<StockScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _archiveStockRecord(String entityType, String id, String label) async {
+    final reason = await _askText('$label করার কারণ');
+    if (reason == null || reason.trim().isEmpty) return;
+    await _save(() => _controller.archiveRecord(entityType: entityType, id: id, reason: reason.trim()));
   }
 
   Future<void> _archiveItem(StockItem item) async {
