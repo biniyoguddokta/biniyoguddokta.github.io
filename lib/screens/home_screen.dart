@@ -32,6 +32,7 @@ import 'transaction_history_screen.dart';
 import 'financial_management_screen.dart';
 import 'loss_project_screen.dart';
 import '../services/loss_project_service.dart';
+import '../services/stock_service.dart';
 import 'pledge_documents_screen.dart';
 // ১. Import যোগ করুন — অন্য screen import-এর পাশে:
 import 'stock_screen.dart';
@@ -341,28 +342,100 @@ class HomeContentState extends State<HomeContent> {
         ApiService.getInvestments().catchError((_) => null),
         ApiService.getInstallmentData().catchError((_) => null),
         LossProjectService.load(),
+        (() async {
+          try {
+            return await StockService.loadAll(forceRefresh: forceRefresh);
+          } catch (_) {
+            // Stock is admin-only in the current backend; a stock load failure
+            // must never block the rest of the dashboard.
+            return null;
+          }
+        })(),
       ]);
       final response = results[0];
       final membersRes = results[1];
       final investmentsRes = results[2];
       final installmentRes = results[3];
       final lossRows = results[4] is List ? (results[4] as List).whereType<Map<String, dynamic>>().toList() : <Map<String, dynamic>>[];
+      final stockData = results[5];
 
       if (!mounted) return;
 
+      // Normalize all investment sources into one list. The source pages and
+      // their records remain unchanged; this is only a dashboard presentation.
+      final combinedInvestments = <Map<String, dynamic>>[];
       if (investmentsRes is List) {
-        final sortedInvestments = List<dynamic>.from(investmentsRes);
-        sortedInvestments.sort((a, b) {
-          final da = DateTime.tryParse(a['StartDate']?.toString() ?? '') ??
-              DateTime.fromMillisecondsSinceEpoch(0);
-          final db = DateTime.tryParse(b['StartDate']?.toString() ?? '') ??
-              DateTime.fromMillisecondsSinceEpoch(0);
-          return db.compareTo(da);
-        });
-        recentInvestments = sortedInvestments.take(3).toList();
-      } else {
-        recentInvestments = [];
+        for (final raw in investmentsRes) {
+          if (raw is! Map) continue;
+          final item = Map<String, dynamic>.from(raw);
+          item['_sourceKind'] = 'project';
+          item['_sortDate'] = item['StartDate'] ?? item['Date'];
+          combinedInvestments.add(item);
+        }
       }
+
+      if (installmentRes is Map && installmentRes['contracts'] is List) {
+        final payments = installmentRes['payments'] is List
+            ? installmentRes['payments'] as List
+            : const <dynamic>[];
+        for (final raw in installmentRes['contracts'] as List) {
+          if (raw is! Map) continue;
+          final contract = Map<String, dynamic>.from(raw);
+          final contractId = (contract['ContractID'] ?? '').toString();
+          final paid = payments.where((payment) => payment is Map &&
+              (payment['ContractID'] ?? '').toString() == contractId).fold<double>(
+            0,
+            (sum, payment) => sum + (double.tryParse(
+              '${payment['Amount'] ?? 0}'.replaceAll(',', ''),
+            ) ?? 0),
+          );
+          final cost = double.tryParse(
+            '${contract['CostPrice'] ?? 0}'.replaceAll(',', ''),
+          ) ?? 0;
+          combinedInvestments.add({
+            'ProjectName': contract['ProductName'] ?? 'কিস্তিতে পণ্য',
+            'Sector': 'কিস্তিতে পণ্য • ${contract['MemberName'] ?? 'ক্রেতা উল্লেখ নেই'}',
+            'InvestAmount': cost,
+            'Status': (contract['Status'] ?? '').toString().isNotEmpty
+                ? contract['Status']
+                : ((double.tryParse('${contract['SalePrice'] ?? 0}') ?? 0) <=
+                        ((double.tryParse('${contract['DownPayment'] ?? 0}') ?? 0) + paid)
+                    ? 'সম্পন্ন'
+                    : 'সক্রিয়'),
+            'Date': contract['StartDate'],
+            '_sortDate': contract['StartDate'],
+            '_sourceKind': 'installment',
+            '_sourceId': contractId,
+          });
+        }
+      }
+
+      if (stockData != null) {
+        for (final transaction in stockData.transactions) {
+          if (transaction.type.toLowerCase() != 'purchase' ||
+              transaction.status.toLowerCase() == 'cancelled' ||
+              transaction.status.toLowerCase() == 'canceled') continue;
+          combinedInvestments.add({
+            'ProjectName': transaction.lines.isNotEmpty
+                ? transaction.lines.map((line) => line.productName).where((name) => name.isNotEmpty).take(2).join(', ')
+                : (transaction.referenceNumber.isNotEmpty ? transaction.referenceNumber : 'স্টক ক্রয়'),
+            'Sector': 'স্টক • ${transaction.partyName.isNotEmpty ? transaction.partyName : 'সরবরাহকারী উল্লেখ নেই'}',
+            'InvestAmount': transaction.totalAmount,
+            'Status': transaction.paymentStatus == 'Paid' ? 'পরিশোধিত' : 'চলমান',
+            'Date': transaction.date.toIso8601String(),
+            '_sortDate': transaction.date.toIso8601String(),
+            '_sourceKind': 'stock',
+            '_sourceId': transaction.id,
+          });
+        }
+      }
+
+      combinedInvestments.sort((a, b) {
+        final da = DateTime.tryParse('${a['_sortDate'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final db = DateTime.tryParse('${b['_sortDate'] ?? ''}') ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return db.compareTo(da);
+      });
+      recentInvestments = combinedInvestments.take(3).toList();
 
       if (response is List) {
         double tempCash = 0.0;
@@ -624,6 +697,17 @@ class HomeContentState extends State<HomeContent> {
               final project =
                   (investment['ProjectName'] ?? 'নাম উল্লেখ নেই').toString();
               final sector = (investment['Sector'] ?? '').toString();
+              final sourceKind = (investment['_sourceKind'] ?? 'project').toString();
+              final sourceLabel = sourceKind == 'stock'
+                  ? 'স্টক বিনিয়োগ'
+                  : sourceKind == 'installment'
+                      ? 'কিস্তিতে পণ্য'
+                      : 'বিনিয়োগ';
+              final sourceIcon = sourceKind == 'stock'
+                  ? Icons.inventory_2_rounded
+                  : sourceKind == 'installment'
+                      ? Icons.shopping_bag_rounded
+                      : Icons.business_center_rounded;
               final amount = double.tryParse(
                     '${investment['InvestAmount'] ?? 0}'.replaceAll(',', ''),
                   ) ??
@@ -659,9 +743,9 @@ class HomeContentState extends State<HomeContent> {
                             color: const Color(0xFF5146A5).withOpacity(.11),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(
-                            Icons.business_center_rounded,
-                            color: Color(0xFF5146A5),
+                          child: Icon(
+                            sourceIcon,
+                            color: const Color(0xFF5146A5),
                           ),
                         ),
                         const SizedBox(width: 11),
@@ -723,7 +807,7 @@ class HomeContentState extends State<HomeContent> {
                         ),
                         const Spacer(),
                         Text(
-                          'বিনিয়োগ',
+                          sourceLabel,
                           style: TextStyle(color: muted, fontSize: 11),
                         ),
                         const SizedBox(width: 7),
